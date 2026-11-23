@@ -59,14 +59,23 @@ the creator. The widget uses it to offer "delete". `clientId` itself is never re
 - `docY` is in 0..1e6. `vw` and `vh` are in 1..20000.
 
 Limits: `selector` ≤ 500 (rejected if longer), `snippet` ≤ 120 (truncated), `author` ≤ 60, `text` ≤ 2000.
-Text is trimmed, `\r\n` becomes `\n`, and control characters are stripped. Empty text is rejected.
+Text is trimmed, `\r\n` becomes `\n`, and control characters are stripped. Text or author that
+draws nothing (only spaces, zero-width or bidi format characters) is rejected. Bidi embedding /
+override / isolate characters are stripped from `author` and `snippet`. `selector` is reduced to
+one line without control characters.
 Text is stored raw: the widget renders it with `textContent` only.
 
 Errors are JSON `{ error, message, field? }` with status `400` (validation), `401`, `403` (not the
 creator), `404`, `409` (has replies), `413` (body > 16 KB), `429` (rate limit, with `Retry-After`).
 
-Rate limit: 30 writes per minute per `CF-Connecting-IP`, counted inside the Durable Object
-(in memory, so it resets if the object is evicted after inactivity). Reads are not limited.
+Rate limit: 30 writes per minute per client and 200 writes per minute in total, counted inside the
+Durable Object (in memory, so it resets if the object is evicted after inactivity). A client is the
+`CF-Connecting-IP` address for IPv4, and its /64 prefix for IPv6 (one subscriber usually holds a
+whole /64). Reads are not limited.
+
+Bodies are read up to 16 KB even when sent chunked. The Pages Function also answers `401` for a
+request without `X-Review-Key` and `413` for a declared `Content-Length` over 16 KB without
+forwarding the body; otherwise it streams the body through instead of buffering it.
 
 ## Secrets and vars
 

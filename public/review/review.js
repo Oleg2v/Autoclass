@@ -11,6 +11,9 @@ const API = '/api/comments';
 const POLL_MS = 20000;
 const MAX_TEXT = 2000;
 const MAX_NAME = 60;
+// The key travels in an HTTP header: printable ASCII only, or fetch() throws before sending.
+const KEY_RE = /^[\x21-\x7e]{1,200}$/;
+const UNSENT_MS = 4000; // a second "leave" within this time discards / closes anyway
 const LS = {
   key: 'acr-key',
   name: 'acr-name',
@@ -40,7 +43,7 @@ const he = {
   cancel: 'ביטול',
   replyPh: 'תגובה…',
   reply: 'שליחה',
-  resolve: 'סמן כפתור',
+  resolve: 'סימון כנפתרה',
   reopen: 'פתיחה מחדש',
   resolvedBy: (n, t) => `נפתרה ע״י ${n} · ${t}`,
   del: 'מחיקה',
@@ -78,6 +81,9 @@ const he = {
   errGone: 'ההערה כבר לא קיימת.',
   errServer: 'שגיאת שרת. נסו שוב.',
   shortcut: 'Ctrl+Enter לשליחה',
+  unsentDraft: 'ההערה עוד לא נשלחה. כדי לבטל אותה, לחצו שוב.',
+  unsentReply: 'התגובה עוד לא נשלחה. לחצו שוב כדי לסגור, הטקסט יישמר.',
+  replyDraft: 'יש כאן תגובה שלא נשלחה',
 };
 
 const ru = {
@@ -139,6 +145,9 @@ const ru = {
   errGone: 'Комментарий уже удалён.',
   errServer: 'Ошибка сервера. Попробуйте ещё раз.',
   shortcut: 'Ctrl+Enter — отправить',
+  unsentDraft: 'Комментарий ещё не отправлен. Нажмите ещё раз, чтобы отменить его.',
+  unsentReply: 'Ответ ещё не отправлен. Нажмите ещё раз, чтобы закрыть: текст сохранится.',
+  replyDraft: 'Здесь есть неотправленный ответ',
 };
 
 const I18N = { he, ru };
@@ -215,15 +224,19 @@ const isEditable = (el) =>
 
 const HTML = document.documentElement;
 const PAGE_DIR = getComputedStyle(HTML).direction === 'rtl' ? 'rtl' : 'ltr';
-const PAGE =
-  (HTML.dataset.acrPage ||
-    location.pathname
-      .replace(/\/index\.html?$/, '/')
-      .replace(/\.html?$/, '')
-      .replace(/^\/+|\/+$/g, '')
-      .replace(/[^A-Za-z0-9/_.-]/g, '-')
-      .slice(0, 100)) ||
-  'home';
+// Page id, same rule as the API's parsePage: [A-Za-z0-9] first, then [A-Za-z0-9/_.-].
+// Percent-encoded (Hebrew) slugs become e.g. "D7-A9-D7-9C"; stable, if not pretty.
+function pageId(raw) {
+  const id = String(raw || '')
+    .replace(/\/index\.html?$/, '/')
+    .replace(/\.html?$/, '')
+    .replace(/[^A-Za-z0-9/_.-]/g, '-')
+    .replace(/^[^A-Za-z0-9]+/, '')
+    .slice(0, 100)
+    .replace(/\/+$/, '');
+  return id || 'home';
+}
+const PAGE = pageId(HTML.dataset.acrPage || location.pathname);
 const MQ_SHEET = matchMedia('(max-width: 640px)');
 const MQ_FINE = matchMedia('(hover: hover) and (pointer: fine)');
 const MQ_REDUCE = matchMedia('(prefers-reduced-motion: reduce)');
@@ -242,6 +255,7 @@ const S = {
   filter: store.get(LS.filter) === 'all' ? 'all' : 'open',
   showResolved: store.get(LS.resolved) === '1',
   pendingResolve: new Map(),
+  replyDrafts: new Map(), // thread id -> unsent reply text (survives closing the popover)
   returnFocus: null,
   netErr: false,
   authErr: false,
@@ -262,6 +276,9 @@ let hintId = 0;
 let ro = null;
 let pointer = null;
 let inflight = null;
+let spacer = null; // temporary room below the document for a bottom-sheet pin
+let sheetTopSeen = 0;
+let unsentAt = 0;
 
 const byId = (id) => S.threads.find((t) => t.id === id) || null;
 const isWidget = (el) => !!(el && el.nodeType === 1 && el.closest('.acr-root, .acr-layer'));
@@ -269,7 +286,14 @@ const isSheet = () => MQ_SHEET.matches;
 
 // ─────────────────────────────── API ───────────────────────────────
 
+function badKeyError() {
+  const err = new Error('invalid review key');
+  err.status = 401; // reported like a wrong key, which it is
+  return err;
+}
+
 async function api(method, path = '', body, query) {
+  if (!KEY_RE.test(S.key || '')) throw badKeyError();
   const qs = query ? `?${new URLSearchParams(query)}` : '';
   const headers = { 'X-Review-Key': S.key, Accept: 'application/json' };
   if (body) headers['Content-Type'] = 'application/json';
@@ -319,7 +343,7 @@ function toast(msg, kind = 'err') {
   toastEl.textContent = msg;
   toastEl.className = `acr-toast acr-on acr-${kind}`;
   clearTimeout(toastId);
-  toastId = setTimeout(() => toastEl.classList.remove('acr-on'), kind === 'ok' ? 2200 : 5000);
+  toastId = setTimeout(() => toastEl.classList.remove('acr-on'), kind === 'ok' ? 2200 : kind === 'info' ? 4000 : 5000);
 }
 
 // ─────────────────────────────── time ───────────────────────────────
@@ -341,11 +365,27 @@ function relTime(iso) {
   let unit = 'minute';
   let div = 60;
   for (const [u, sec] of units) if (a >= sec) [unit, div] = [u, sec];
+  // ICU's Hebrew repeats the count ("לפני דקה (1)", "לפני שעתיים (2)") and says "the week
+  // that passed" for -1 week; past times read better from a small table.
+  if (S.lang === 'he' && s < 0) return heAgo(Math.max(1, Math.round(a / div)), unit);
   try {
     return new Intl.RelativeTimeFormat(S.lang, { numeric: 'auto' }).format(Math.round(s / div), unit);
   } catch {
     return new Date(ms).toLocaleString();
   }
+}
+
+const HE_AGO = {
+  minute: ['לפני דקה', 'לפני 2 דקות', 'דקות'],
+  hour: ['לפני שעה', 'לפני שעתיים', 'שעות'],
+  day: ['אתמול', 'שלשום', 'ימים'],
+  week: ['לפני שבוע', 'לפני שבועיים', 'שבועות'],
+  month: ['לפני חודש', 'לפני חודשיים', 'חודשים'],
+  year: ['לפני שנה', 'לפני שנתיים', 'שנים'],
+};
+function heAgo(n, unit) {
+  const [one, two, many] = HE_AGO[unit];
+  return n === 1 ? one : n === 2 ? two : `לפני ${n} ${many}`;
 }
 
 function absTime(iso) {
@@ -545,7 +585,9 @@ function renderPins() {
     b.classList.toggle('acr-resolved', !!th.resolved);
     b.classList.toggle('acr-pending', !!th.pending);
     b.classList.toggle('acr-active', !!(S.active && S.active.type === 'thread' && S.active.id === th.id));
-    b.setAttribute('aria-label', t.pinLabel(th.pending ? '…' : th.num, th.author, th.resolved));
+    const drafted = S.replyDrafts.has(th.id);
+    b.classList.toggle('acr-has-draft', drafted);
+    b.setAttribute('aria-label', t.pinLabel(th.pending ? '…' : th.num, th.author, th.resolved) + (drafted ? ` · ${t.replyDraft}` : ''));
     b._title = null; // refreshed by layout()
     seen.add(th.id);
   }
@@ -685,11 +727,58 @@ function scrollToY(y) {
   else window.scrollTo({ top, behavior: MQ_REDUCE.matches ? 'auto' : 'smooth' });
 }
 
-// On phones the sheet covers the lower part of the screen: lift the pin above it.
+// On phones the sheet covers the lower part of the screen: scroll so the pin sits in
+// the free area above it. A pin near the end of the document cannot be scrolled that
+// high, so a temporary spacer in the pin layer adds the room (removed on close).
 function revealAboveSheet(anchor) {
-  if (!isSheet()) return;
+  if (!isSheet() || !anchor || pop.hidden) return;
+  const sheetTop = pop.getBoundingClientRect().top;
+  sheetTopSeen = sheetTop;
   const p = resolvePoint(anchor);
-  if (p.y < 60 || p.y > innerHeight * 0.3) scrollToY(scrollY + p.y - innerHeight * 0.2);
+  const minY = 32 + 24; // the pin box rises 32px above its tip
+  const maxY = sheetTop - 16;
+  if (p.y >= minY && p.y <= maxY) return;
+  const want = Math.max(minY, Math.round(sheetTop * 0.5));
+  const target = Math.max(0, Math.round(scrollY + p.y - want));
+  const se = document.scrollingElement || HTML;
+  const short = target - (se.scrollHeight - innerHeight);
+  if (short > 0) growSpacer(short + 8);
+  scrollToY(target);
+}
+
+// The sheet grows with replies and the "resolved by" note: keep the pin above it.
+function followSheet(anchor) {
+  if (!isSheet() || pop.hidden) return;
+  const top = pop.getBoundingClientRect().top;
+  const grew = top < sheetTopSeen - 2;
+  sheetTopSeen = top;
+  if (grew) revealAboveSheet(anchor);
+}
+
+function growSpacer(px) {
+  if (!spacer) {
+    const se = document.scrollingElement || HTML;
+    const layerTop = layer.getBoundingClientRect().top + scrollY;
+    spacer = h('div', { class: 'acr-spacer', 'aria-hidden': 'true' });
+    spacer._h = 0;
+    spacer.style.top = `${Math.round(se.scrollHeight - layerTop)}px`;
+    layer.append(spacer);
+  }
+  spacer._h += Math.ceil(px);
+  spacer.style.height = `${spacer._h}px`;
+  lenisResize();
+}
+
+function dropSpacer() {
+  if (!spacer) return;
+  spacer.remove();
+  spacer = null;
+  lenisResize();
+}
+
+function lenisResize() {
+  const lenis = window.__lenis;
+  if (lenis && typeof lenis.resize === 'function') lenis.resize();
 }
 
 // ─────────────────────────────── comment mode ───────────────────────────────
@@ -717,10 +806,12 @@ function onPageClick(e) {
     return;
   }
   if (S.active) {
-    if (S.active.type === 'draft' && popRefs && popRefs.ta.value.trim()) {
+    // A typed new comment is never thrown away by a stray click: flash it instead.
+    if (S.active.type === 'draft' && hasUnsent()) {
       pulseDraft();
       return;
     }
+    if (S.active.type === 'thread' && keepUnsent()) return;
     const wasThread = S.active.type === 'thread';
     closePopover(false);
     if (wasThread) return;
@@ -729,13 +820,29 @@ function onPageClick(e) {
   if (anchor) openDraft(anchor);
 }
 
-// A typed draft is never thrown away by a stray click: flash it instead.
-function pulseDraft() {
+function pulseDraft(focus = true) {
   pop.classList.remove('acr-pulse');
   void pop.offsetWidth;
   pop.classList.add('acr-pulse');
-  popRefs.ta.focus({ preventScroll: true });
+  if (focus && popRefs && popRefs.ta) popRefs.ta.focus({ preventScroll: true });
 }
+
+const hasUnsent = () => !!(S.active && popRefs && popRefs.ta && popRefs.ta.value.trim());
+
+// Leaving a popover that holds typed text: the first attempt flashes it and says what a
+// second attempt (within UNSENT_MS) will do. Returns true when the caller must stop.
+// A new comment is discarded by the second attempt; a reply stays in S.replyDrafts.
+function keepUnsent() {
+  if (!hasUnsent()) return false;
+  const now = Date.now();
+  if (now - unsentAt < UNSENT_MS) return false;
+  unsentAt = now;
+  const draft = S.active.type === 'draft';
+  pulseDraft(draft || !isSheet()); // no keyboard pop-up on phones for a reply
+  toast(draft ? T().unsentDraft : T().unsentReply, 'info');
+  return true;
+}
+const keepDraft = () => !!(S.active && S.active.type === 'draft' && keepUnsent());
 
 function onPointerMove(e) {
   if (e.pointerType && e.pointerType !== 'mouse') return;
@@ -751,6 +858,7 @@ function onPointerLeave() {
 function setMode(on) {
   on = !!on;
   if (S.mode === on) return;
+  if (!on && keepDraft()) return;
   S.mode = on;
   HTML.classList.toggle('acr-commenting', on);
   layer.classList.toggle('acr-off', !on);
@@ -805,6 +913,11 @@ function closePopover(restore = true) {
   pop.className = 'acr-pop';
   popRefs = null;
   renderPins();
+  // openThread / openDraft close the old popover first and reopen synchronously; the
+  // spacer only goes once nothing is open any more.
+  queueMicrotask(() => {
+    if (!S.active) dropSpacer();
+  });
   const f = S.returnFocus;
   S.returnFocus = null;
   if (restore) {
@@ -884,18 +997,19 @@ function openThread(id, from) {
   const th = byId(id);
   if (!th) return;
   if (!S.mode) setMode(true);
-  const keep = popRefs && popRefs.ta && S.active && S.active.type === 'thread' && S.active.id === id ? popRefs.ta.value : '';
   closePopover(false);
   S.active = { type: 'thread', id };
   S.returnFocus = from || (document.activeElement !== document.body ? document.activeElement : modeBtn);
-  buildThreadPopover(th, keep);
+  buildThreadPopover(th);
   renderPins();
   showPop();
-  if (isSheet()) pop.focus({ preventScroll: true });
-  else popRefs.ta.focus({ preventScroll: true });
+  if (isSheet()) {
+    revealAboveSheet(th.anchor);
+    pop.focus({ preventScroll: true });
+  } else popRefs.ta.focus({ preventScroll: true });
 }
 
-function buildThreadPopover(th, draftText = '') {
+function buildThreadPopover(th) {
   const t = T();
   const title = h('h2', { class: 'acr-pop-title', id: 'acr-pop-title' });
   const chip = h('span', { class: 'acr-chip' });
@@ -913,7 +1027,12 @@ function buildThreadPopover(th, draftText = '') {
     placeholder: t.replyPh,
     'aria-label': t.replyPh,
   });
-  ta.value = draftText;
+  const tid = th.id;
+  ta.value = S.replyDrafts.get(tid) || '';
+  ta.addEventListener('input', () => {
+    if (ta.value.trim()) S.replyDrafts.set(tid, ta.value);
+    else S.replyDrafts.delete(tid);
+  });
   const send = h('button', { type: 'submit', class: 'acr-btn acr-btn-primary' }, t.reply);
   const form = h(
     'form',
@@ -1005,6 +1124,7 @@ function fillThread(th) {
   if (th.resolved && th.resolvedBy) nodes.push(h('p', { class: 'acr-note' }, t.resolvedBy(th.resolvedBy, relTime(th.resolvedAt))));
   body.replaceChildren(...nodes);
   body.scrollTop = scroll;
+  if (S.active && S.active.type === 'thread' && S.active.id === th.id) followSheet(th.anchor);
 }
 
 // ─────────────────────────────── actions ───────────────────────────────
@@ -1166,6 +1286,7 @@ async function submitReply(ta) {
   const temp = { id: `tmp${randId(10)}`, author: name, text, created: new Date().toISOString(), mine: true, pending: true };
   th.replies.push(temp);
   ta.value = '';
+  S.replyDrafts.delete(th.id);
   renderAll();
   try {
     const reply = await api('POST', `/${encodeURIComponent(th.id)}/replies`, { author: name, text, clientId: S.client });
@@ -1181,7 +1302,9 @@ async function submitReply(ta) {
     if (cur) cur.replies = cur.replies.filter((r) => r.id !== temp.id);
     renderAll();
     toast(errMsg(e));
+    if (!S.replyDrafts.has(th.id)) S.replyDrafts.set(th.id, text);
     if (popRefs && popRefs.ta && S.active && S.active.id === th.id && !popRefs.ta.value) popRefs.ta.value = text;
+    renderPins();
   }
 }
 
@@ -1234,6 +1357,7 @@ async function deleteReply(threadId, replyId) {
 
 async function doExport(format) {
   try {
+    if (!KEY_RE.test(S.key || '')) throw badKeyError();
     const res = await fetch(`${API}/export?format=${format}`, {
       headers: { 'X-Review-Key': S.key },
       cache: 'no-store',
@@ -1326,9 +1450,8 @@ function goTo(id) {
   if (!th) return;
   closeDrawer(false);
   if (!S.mode) setMode(true);
-  openThread(id, listBtn);
-  const p = resolvePoint(th.anchor);
-  scrollToY(scrollY + p.y - innerHeight * (isSheet() ? 0.22 : 0.42));
+  openThread(id, listBtn); // on phones this also lifts the pin above the sheet
+  if (!isSheet()) scrollToY(scrollY + resolvePoint(th.anchor).y - innerHeight * 0.42);
 }
 
 function openFromHash() {
@@ -1424,6 +1547,7 @@ function setFilter(f) {
 }
 
 function openDrawer() {
+  if (keepDraft()) return;
   if (S.active) closePopover(false);
   S.drawer = true;
   buildDrawer();
@@ -1484,7 +1608,7 @@ function onKey(e) {
     if (S.modal) return;
     if (S.active) {
       e.preventDefault();
-      closePopover();
+      if (!keepDraft()) closePopover();
     } else if (S.drawer) {
       e.preventDefault();
       closeDrawer();
@@ -1512,6 +1636,7 @@ const onMedia = () => {
 };
 
 function exitReview() {
+  if (keepDraft()) return;
   store.del(LS.key);
   setMode(false);
   closeDrawer(false);
@@ -1573,7 +1698,7 @@ function readKey() {
   try {
     const url = new URL(location.href);
     if (url.searchParams.has('review')) {
-      const k = url.searchParams.get('review');
+      const k = (url.searchParams.get('review') || '').trim();
       if (k) {
         store.set(LS.key, k);
         key = k;
@@ -1616,6 +1741,8 @@ window.__acrReview = {
   state: S,
   refresh,
   setMode: (on) => setMode(on),
+  relTime: (iso) => relTime(iso),
+  pageId,
 };
 
 start();

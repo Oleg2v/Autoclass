@@ -1,0 +1,27 @@
+# Auto Class demo site on autoclass.kikkey.com:
+# static assets from /dist (Workers Static Assets, honours dist/_headers and dist/404.html)
+# + /api/comments/* forwarded to the "autoclass-comments" Worker (Durable Object + SQLite).
+# Deploy: npm run build && cd workers/site && npx wrangler deploy
+# (The Pages project "autoclass-kikkey" with /functions is kept as a mirror on *.pages.dev.)
+
+name = "autoclass"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = false
+
+routes = [
+  { pattern = "autoclass.kikkey.com", custom_domain = true }
+]
+
+[assets]
+directory = "../../dist"
+binding = "ASSETS"
+not_found_handling = "404-page"
+run_worker_first = ["/api/*"]
+
+[[services]]
+binding = "COMMENTS"
+service = "autoclass-comments"
+
+[observability]
+enabled = true

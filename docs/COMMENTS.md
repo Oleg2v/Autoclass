@@ -64,11 +64,19 @@ The toolbar sits bottom-left (the inline end of the RTL page). It has five contr
   - Click or tap anywhere to drop a pin and write a note. Press Ctrl/Cmd+Enter to send.
   - The first time someone posts, they are asked for a name. It is stored in `acr-name` and can be changed from the list.
   - **Esc** closes the open popover, then the list, then leaves comment mode.
+  - Typed text is not lost by accident. With an unsent new comment, a click elsewhere on the page
+    only flashes the composer. Esc, the comment-mode button, the list, or exit first flash it and
+    show a hint; doing it again within 4 seconds discards the comment. Unsent reply text stays with
+    its thread when the popover closes (the pin shows a small white dot) and comes back when the
+    thread is reopened.
 - **Pins**:
   - Lime pins are open threads. Grey pins are resolved, and they stay hidden unless "show resolved" is on.
-  - Click a pin to read the thread, reply, mark it resolved (סמן כפתור / Решено) or reopen it.
+  - Click a pin to read the thread, reply, mark it resolved (סימון כנפתרה / Решено) or reopen it.
+    The spec said "סמן כפתור"; it was changed because without vowels it reads as "mark button".
+    Confirm the wording with the owner.
   - You can delete your own message while nobody has replied after it.
-  - On phones (≤ 640px) the thread opens as a bottom sheet.
+  - On phones (≤ 640px) the thread opens as a bottom sheet (at most 60% of the screen), and the
+    page scrolls so the pin and its element stay visible above it.
 - **Dashed pin**: the element is not visible at this screen size (for example, a desktop-only block
   seen on a phone). The pin is then placed at the approximate page position it had when it was created.
 - Threads refresh every 20 seconds while the tab is visible, and again when the tab regains focus.
@@ -130,7 +138,10 @@ thread structure. Both include every page.
   (`textContent`), never as HTML.
 - **Deleting**: each browser gets a random `acr-client` id. Only that browser can delete its own
   messages, and only while nobody has replied after them.
-- **Rate limit**: 30 writes per minute per IP address.
+- **Rate limit**: 30 writes per minute per IPv4 address or per IPv6 /64 network, and 200 writes per
+  minute in total. This also caps how many notifications can be sent.
+- **Review key**: must be printable ASCII (no spaces, no Hebrew). Surrounding spaces from copy-paste
+  are trimmed; any other key is reported as a wrong key.
 - **Widget isolation**:
   - The widget's styles are scoped (`.acr-root`, `.acr-layer`, and `html.acr-commenting` in comment mode).
   - It sets its own font, box model and resets, so page CSS does not leak into it.

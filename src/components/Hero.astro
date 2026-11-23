@@ -68,7 +68,7 @@ const LAST_DENT = 5; // the "ח" in "פחחות" pops last, with a lime flash
         </div>
         <ul class="hero__chips">
           {GOOGLE.rating && (
-            <li class="hero__rating"><a href="#reviews"><Icon name="star" /><b class="ltr">{GOOGLE.rating}</b> {he(copy.hero.google)} · {GOOGLE.count} {he(copy.reviews.reviewsWord)}</a></li>
+            <li class="hero__rating"><a href="#reviews"><Icon name="star" /><b><bdi>{GOOGLE.rating}</bdi></b> {he(copy.hero.google)} · <bdi>{GOOGLE.count}</bdi> {he(copy.reviews.reviewsWord)}</a></li>
           )}
           {copy.hero.chips.map((c) => (
             <li><Icon name="check" />{c.he}</li>

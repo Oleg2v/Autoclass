@@ -294,6 +294,28 @@ html.acr-commenting body *:not(.acr-root):not(.acr-root *):not(.acr-layer):not(.
 .acr-layer .acr-pin.acr-pending { opacity: 0.65; }
 .acr-layer .acr-pin.acr-active { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--acr-ink), 0 6px 16px rgba(0, 0, 0, 0.5); z-index: 2; }
 .acr-layer .acr-pin.acr-draft { background: #fff; font-size: 18px; z-index: 3; }
+/* unsent reply text waiting in this thread */
+.acr-layer .acr-pin.acr-has-draft::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 2px solid var(--acr-ink);
+  border-radius: 50%;
+  background: #fff;
+}
+.acr-layer.acr-pdir-rtl .acr-pin.acr-has-draft::after { right: auto; left: -5px; }
+/* temporary room below the document so a pin near the end can sit above a bottom sheet */
+.acr-layer .acr-spacer {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  visibility: hidden;
+  pointer-events: none;
+}
 
 /* ───────────── shared controls ───────────── */
 
@@ -479,6 +501,11 @@ html.acr-commenting body *:not(.acr-root):not(.acr-root *):not(.acr-layer):not(.
   border-bottom: 0;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   transform: none !important;
+}
+/* a thread sheet leaves at least 40% of the screen for the pin and its element */
+.acr-root .acr-pop.acr-pop-thread.acr-sheet {
+  max-height: 60vh;
+  max-height: 60dvh;
 }
 .acr-root .acr-pop.acr-sheet::before {
   content: "";
@@ -669,6 +696,7 @@ html.acr-commenting body *:not(.acr-root):not(.acr-root *):not(.acr-layer):not(.
 .acr-root .acr-toast.acr-on { opacity: 1; visibility: visible; transform: none; }
 .acr-root .acr-toast.acr-err { border-color: rgba(255, 122, 102, 0.6); }
 .acr-root .acr-toast.acr-ok { border-color: rgba(185, 202, 19, 0.6); }
+.acr-root .acr-toast.acr-info { border-color: rgba(255, 255, 255, 0.4); }
 
 /* ───────────── small screens ───────────── */
 

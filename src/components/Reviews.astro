@@ -17,11 +17,11 @@ const hasReviews = GOOGLE.reviews.length > 0;
       </div>
       {GOOGLE.rating && (
         <div class="rev__score" data-reveal style="--d:2">
-          <span class="rev__num">{GOOGLE.rating}</span>
+          <span class="rev__num"><bdi>{GOOGLE.rating}</bdi></span>
           <span class="rev__stars" role="img" aria-label={`${GOOGLE.rating} ${he(c.starsLabel)}`}>
             {[0, 1, 2, 3, 4].map(() => <Icon name="star" />)}
           </span>
-          <span class="rev__count">{he(c.rating)} · {GOOGLE.count} {he(c.reviewsWord)}</span>
+          <span class="rev__count">{he(c.rating)} · <bdi>{GOOGLE.count}</bdi> {he(c.reviewsWord)}</span>
         </div>
       )}
     </header>
