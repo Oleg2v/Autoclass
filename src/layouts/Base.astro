@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import Header from '../components/Header.astro';
+import LogoSymbol from '../components/LogoSymbol.astro';
 import { copy, he } from '../data/copy.js';
 import { BUSINESS, SITE_URL, HOURS, GOOGLE, waLink } from '../data/site.js';
 
@@ -114,6 +115,7 @@ const ld = {
     <script type="application/ld+json" set:html={JSON.stringify(ld)} />
   </head>
   <body>
+    <LogoSymbol />
     <a class="skip" href="#main">{he(copy.a11y.skip)}</a>
     <Header />
     <main id="main" tabindex="-1">

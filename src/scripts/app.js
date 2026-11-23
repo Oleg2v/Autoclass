@@ -9,6 +9,12 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
 const mobile = matchMedia('(max-width: 900px)').matches;
 
+const nextTask = () => new Promise((r) => setTimeout(r, 0));
+const afterLoad = () => new Promise((r) => {
+  const go = () => ('requestIdleCallback' in window ? requestIdleCallback(() => r(), { timeout: 1200 }) : setTimeout(r, 150));
+  document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
+});
+
 initHeader();
 initReveals();
 initCounters(reduce);
@@ -32,7 +38,9 @@ if (!reduce) {
 }
 
 async function boot() {
-  const [{ gsap }, { ScrollTrigger }] = await Promise.all([import('gsap'), import('gsap/ScrollTrigger')]);
+  const mods = Promise.all([import('gsap'), import('gsap/ScrollTrigger')]);
+  await afterLoad();
+  const [{ gsap }, { ScrollTrigger }] = await mods;
   gsap.registerPlugin(ScrollTrigger);
 
   if (fine) {
@@ -45,9 +53,11 @@ async function boot() {
   }
 
   const { initStory } = await import('./story.js');
+  await nextTask();
   const storyApi = initStory(gsap, ScrollTrigger, { mobile });
 
   const { initChat } = await import('./chat.js');
+  await nextTask();
   initChat(ScrollTrigger);
 
   const { initGlint } = await import('./glint.js');
@@ -60,7 +70,6 @@ async function boot() {
     initServices(gsap);
   }
 
-  // fonts / images can change heights after load
-  addEventListener('load', () => ScrollTrigger.refresh());
+  // fonts can change heights after the engine starts
   document.fonts?.ready.then(() => ScrollTrigger.refresh());
 }

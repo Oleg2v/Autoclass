@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "fonts": "python3 scripts/subset-fonts.py",
-    "images": "node scripts/build-images.mjs"
+    "images": "node scripts/build-images.mjs",
+    "copy-doc": "node scripts/copy-doc.mjs"
   },
   "dependencies": {
     "astro": "^7.4.13",

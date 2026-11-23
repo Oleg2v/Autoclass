@@ -250,6 +250,9 @@ ul, ol { padding: 0; list-style: none; }
   .js [data-reveal] { opacity: 1; transform: none; transition: none; }
 }
 
+/* Sections below the scroll-driven parts are rendered lazily (big win for first-render cost). */
+.cv { content-visibility: auto; contain-intrinsic-size: auto 1100px; }
+
 /* review mode: highlight claims the owner must confirm */
 html.is-review [data-verify] { outline: 2px dashed var(--signal); outline-offset: 6px; position: relative; }
 html.is-review [data-verify]::after {
