@@ -23,18 +23,19 @@ export function initChat(ScrollTrigger) {
     }
     if (target === shown) { setTyping(false); return; }
     const next = msgs[shown];
+    const behind = target - shown > 1; // fast scroll: catch up quicker
     if (next.dataset.from === 'shop') {
       setTyping(true);
       timer = setTimeout(() => {
         setTyping(false);
         next.classList.add('is-shown');
         shown++;
-        timer = setTimeout(step, 260);
-      }, 720);
+        timer = setTimeout(step, behind ? 90 : 260);
+      }, behind ? 320 : 720);
     } else {
       next.classList.add('is-shown');
       shown++;
-      timer = setTimeout(step, 420);
+      timer = setTimeout(step, behind ? 160 : 420);
     }
   };
 

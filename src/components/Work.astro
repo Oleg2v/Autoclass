@@ -89,9 +89,8 @@ const valueText = JSON.stringify(c.valueText.map((t) => t.he));
   .work__go[aria-pressed='true'] { background: var(--lime); color: var(--ink); box-shadow: none; }
   .work__go[aria-pressed='true'] span { color: var(--ink); }
 
-  .ba { position: relative; }
+  .ba { --v: 0; position: relative; }
   .ba__frame {
-    --v: 0;
     position: relative;
     aspect-ratio: 1;
     border-radius: calc(var(--radius) * 1.4);

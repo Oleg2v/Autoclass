@@ -5,7 +5,7 @@ export function initSlider(reduce) {
     const handle = root.querySelector('[data-ba-handle]');
     const track = root.querySelector('[data-ba-track]');
     const frames = [...root.querySelectorAll('[data-ba-frame]')];
-    const gos = [...root.querySelectorAll('[data-ba-go]')];
+    const gos = [...document.querySelectorAll('[data-ba-go]')];
     const texts = JSON.parse(root.dataset.baText || '[]');
     let v = 0, anim = 0;
 
