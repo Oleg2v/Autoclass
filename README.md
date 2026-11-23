@@ -56,8 +56,6 @@ npm run fonts        # пересобрать сабсеты шрифтов (н�
 cd workers/comments && npx wrangler deploy
 npx wrangler secret put REVIEW_KEY      # ключ из ссылки ревью
 npx wrangler secret put NTFY_TOPIC      # секретное имя темы ntfy (пуш-уведомления)
-npx wrangler secret put NOTIFY_EMAIL    # адрес для писем (работает вместе с NTFY_TOKEN)
-npx wrangler secret put NTFY_TOKEN      # токен бесплатного аккаунта ntfy.sh — нужен для писем
 # 2. Сайт
 cd ../.. && npm run build && cd workers/site && npx wrangler deploy
 # 3. (необязательно) зеркало на Pages
@@ -67,9 +65,8 @@ cd ../.. && npx wrangler pages deploy dist --project-name autoclass-kikkey --bra
 Секретов в репозитории нет: ключ ревью, тема ntfy, e-mail и токены хранятся как secrets Worker'а.
 
 ### Уведомления о новых комментариях
-- **Пуш (работает сейчас):** установите приложение ntfy (iOS/Android) или откройте https://ntfy.sh/app и подпишитесь на тему из секрета `NTFY_TOPIC`. Каждое новое сообщение/ответ приходит с текстом и ссылкой, открывающей страницу сразу на нужном пине.
-- **Письмо на e-mail:** ntfy.sh с 2025 года не пересылает письма анонимно (проверено 23.11.2026, ошибка 40053). Нужно один раз завести бесплатный аккаунт на ntfy.sh, создать access token и положить его в секрет `NTFY_TOKEN` — адрес `NOTIFY_EMAIL` уже задан. Пока токена нет, Worker автоматически шлёт пуш без письма.
-- **Альтернатива:** Telegram-бот — секрет `WEBHOOK_URL` = `https://api.telegram.org/bot<token>/sendMessage?chat_id=<id>`.
+Для демо ничего настраивать не нужно: комментарии видны всем по ссылке ревью, счётчик открытых — на панели «הערות».
+По желанию — пуш без регистрации: приложение ntfy (или https://ntfy.sh/app) → подписка на тему из секрета `NTFY_TOPIC`. Письма на e-mail отключены (ntfy.sh требует для них аккаунт); при необходимости включаются секретами `NOTIFY_EMAIL` + `NTFY_TOKEN`, код менять не нужно.
 
 ---
 
