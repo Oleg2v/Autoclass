@@ -1,0 +1,257 @@
+---
+import Car from './car/Car.astro';
+import Icon from './Icon.astro';
+import { copy, he } from '../data/copy.js';
+import { BUSINESS, telLink, waLink } from '../data/site.js';
+
+// Build-time split of the H1 into letters with deterministic "dent" offsets.
+// The visible split copy is aria-hidden; the real heading text is in .sr-only.
+const lines = ['מוסך פחחות', 'וצבע בחולון'];
+let n = 0;
+const rnd = (i: number, k: number) => {
+  const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
+  return x - Math.floor(x);
+};
+const split = lines.map((line) =>
+  line.split(' ').map((word) =>
+    [...word].map((ch) => {
+      const i = n++;
+      return {
+        ch,
+        i,
+        x: ((rnd(i, 1) - 0.5) * 0.5).toFixed(3),
+        y: ((rnd(i, 2) - 0.5) * 0.55).toFixed(3),
+        r: ((rnd(i, 3) - 0.5) * 30).toFixed(1),
+        s: (0.62 + rnd(i, 4) * 0.5).toFixed(2),
+      };
+    })
+  )
+);
+const LAST_DENT = 5; // the "ח" in "פחחות" pops last, with a lime flash
+---
+<section class="hero" id="top" data-cid="hero" aria-labelledby="hero-title">
+  <div class="hero__light" aria-hidden="true"></div>
+  <div class="hero__grid" aria-hidden="true"></div>
+
+  <div class="hero__in wrap">
+    <p class="eyebrow hero__eyebrow">{he(copy.hero.eyebrow)}</p>
+
+    <h1 class="hero__title display" id="hero-title" data-cid="hero-title">
+      <span class="sr-only">{he(copy.hero.h1)}</span>
+      <span class="hero__letters" aria-hidden="true">
+        {split.map((words) => (
+          <span class="hero__line">
+            {words.map((letters) => (
+              <span class="hero__word">
+                {letters.map((l) => (
+                  <span class:list={['ch', { 'ch--last': l.i === LAST_DENT }]} style={`--i:${l.i};--x:${l.x}em;--y:${l.y}em;--r:${l.r}deg;--s:${l.s}`}>{l.ch}</span>
+                ))}
+              </span>
+            ))}
+          </span>
+        ))}
+      </span>
+    </h1>
+
+    <div class="hero__body">
+      <div class="hero__copy">
+        <p class="hero__lead">{he(copy.hero.lead)}</p>
+        <div class="hero__ctas">
+          <a class="btn btn--lg hero__cta" href={waLink()} target="_blank" rel="noopener" data-cid="hero-cta" data-cursor-label={he(copy.headerWa)}>
+            <Icon name="whatsapp" />
+            <span>{he(copy.hero.cta)}</span>
+            <span class="sr-only">{he(copy.a11y.waNewTab)}</span>
+          </a>
+          <a class="hero__call" href={telLink}>
+            {he(copy.hero.call)} <span class="ltr">{BUSINESS.phoneDisplay}</span>
+          </a>
+        </div>
+        <ul class="hero__chips">
+          {copy.hero.chips.map((c) => (
+            <li><Icon name="check" />{c.he}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div class="hero__stage" data-glint>
+        <div class="hero__car">
+          <Car prefix="h" variant="hero" label={he(copy.hero.carLabel)} />
+        </div>
+        <div class="hero__floor" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <a class="hero__scroll" href="#process">
+    <span>{he(copy.hero.scroll)}</span>
+    <span class="hero__scroll-line" aria-hidden="true"></span>
+  </a>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-block-size: 100svh;
+    padding-block: calc(var(--header-h) + clamp(1.5rem, 5vh, 4rem)) clamp(4.5rem, 9vh, 6rem);
+    overflow: clip;
+    isolation: isolate;
+  }
+  .hero__light {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(60vmax 40vmax at var(--mx, 30%) var(--my, 75%), rgb(185 202 19 / .13), transparent 60%),
+      radial-gradient(80vmax 50vmax at 80% -10%, rgb(238 237 230 / .07), transparent 60%);
+    transition: background-position .2s;
+  }
+  .hero__grid {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: linear-gradient(to right, rgb(238 237 230 / .045) 1px, transparent 1px);
+    background-size: calc((100% - 2 * var(--pad)) / 6) 100%;
+    background-position: var(--pad) 0;
+    mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+  }
+
+  .hero__in { display: grid; gap: clamp(1rem, 2.5vh, 1.75rem); }
+  .hero__title {
+    font-size: clamp(3.9rem, 2rem + 8.6vw, 11rem);
+    line-height: .86;
+    margin-block-start: .25rem;
+  }
+  .hero__letters { display: block; }
+  .hero__line { display: block; }
+  .hero__line + .hero__line { color: var(--lime); }
+  .hero__word { display: inline-block; white-space: nowrap; }
+  .hero__word + .hero__word { margin-inline-start: .22em; }
+  .ch { display: inline-block; transform-origin: 50% 80%; }
+
+  .hero__body {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.8fr) 1.6fr;
+    align-items: end;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    margin-block-start: clamp(.5rem, 2vh, 1.5rem);
+  }
+  .hero__lead {
+    font-size: clamp(1.0625rem, 1rem + .35vw, 1.3rem);
+    line-height: 1.6;
+    color: var(--muted-on-dark);
+    max-inline-size: 34ch;
+  }
+  .hero__ctas { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; margin-block-start: 1.6rem; }
+  .hero__call { font-weight: 600; text-decoration: none; padding-block: .5rem; border-block-end: 1.5px solid rgb(185 202 19 / .6); }
+  .hero__call:hover { border-color: var(--lime); }
+  .hero__chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: 1.6rem; }
+  .hero__chips li {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .4rem .8rem .4rem .9rem;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px var(--line-dark);
+    font-size: .875rem;
+    color: var(--text-on-dark);
+  }
+  .hero__chips :global(svg) { inline-size: 1rem; block-size: 1rem; color: var(--lime); }
+
+  .hero__stage {
+    position: relative;
+    margin-inline-end: calc(var(--pad) * -1);
+  }
+  .hero__car { position: relative; z-index: 1; }
+  .hero__car :global(.car) { inline-size: 100%; block-size: auto; overflow: visible; }
+  .hero__floor {
+    position: absolute;
+    inset-inline: 0 calc(var(--pad) * -1);
+    inset-block-end: 9.4%;
+    block-size: 1px;
+    background: linear-gradient(to left, transparent, rgb(238 237 230 / .25) 20%, rgb(238 237 230 / .25) 80%, transparent);
+  }
+  .hero__floor::after { /* measuring-tape ticks */
+    content: '';
+    position: absolute;
+    inset-inline: 10% 10%;
+    inset-block-start: 6px;
+    block-size: 8px;
+    background: repeating-linear-gradient(to left, rgb(185 202 19 / .5) 0 1px, transparent 1px 24px);
+    mask-image: linear-gradient(to left, transparent, #000 30%, #000 70%, transparent);
+  }
+
+  .hero__scroll {
+    position: absolute;
+    inset-block-end: 1.25rem;
+    inset-inline-start: var(--pad);
+    display: inline-flex;
+    align-items: center;
+    gap: .8rem;
+    font-size: .8125rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--muted-on-dark);
+    text-decoration: none;
+    padding: .5rem 0;
+  }
+  .hero__scroll-line { position: relative; inline-size: 56px; block-size: 1px; background: var(--line-dark); overflow: hidden; }
+  .hero__scroll-line::after { content: ''; position: absolute; inset: 0; background: var(--lime); transform: translateX(100%); }
+
+  @media (max-width: 900px) {
+    .hero__body { grid-template-columns: 1fr; }
+    .hero__stage { order: -1; margin-inline: calc(var(--pad) * -.25) calc(var(--pad) * -1.25); margin-block: -.25rem -.5rem; }
+  }
+  @media (max-width: 640px) {
+    .hero__title { font-size: clamp(3.3rem, 17.5vw, 5.4rem); }
+    .hero__ctas { margin-block-start: 1.25rem; }
+    .hero__cta { inline-size: 100%; }
+    .hero__chips { margin-block-start: 1.1rem; }
+    .hero__chips li { font-size: .8125rem; }
+    .hero__scroll { display: none; }
+  }
+
+  /* ── Motion: CSS-only so it runs before any JavaScript ── */
+  @media (prefers-reduced-motion: no-preference) {
+    .ch {
+      animation: ch-fix 1.05s var(--ease-spring) both;
+      animation-delay: calc(120ms + var(--i) * 34ms);
+    }
+    .ch--last {
+      animation: ch-fix-last 1.5s var(--ease-out) both;
+      animation-delay: 1.05s;
+    }
+    @keyframes ch-fix {
+      from { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--r)) scaleX(var(--s)); }
+      35% { opacity: 1; }
+    }
+    @keyframes ch-fix-last {
+      0%, 30% { opacity: 1; transform: translate(.04em, .12em) rotate(-14deg) scaleX(.78); color: inherit; }
+      38% { transform: translate(0, -.04em) rotate(2deg) scaleX(1.04); color: var(--lime); text-shadow: 0 0 .35em rgb(214 225 45 / .65); }
+      55% { transform: none; color: var(--lime); }
+      100% { transform: none; }
+    }
+    .hero__eyebrow, .hero__copy > * {
+      animation: rise 1s var(--ease-out) both;
+    }
+    .hero__eyebrow { animation-delay: 60ms; }
+    .hero__lead { animation-delay: .55s; }
+    .hero__ctas { animation-delay: .7s; }
+    .hero__chips { animation-delay: .85s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+
+    /* the car rolls in from the right (behind it), wheels turn in step with the distance */
+    .hero__car { animation: drive-in 2.2s cubic-bezier(.22, .9, .25, 1) .25s both; }
+    .hero__car :global(.car__rim) { animation: wheel-in 2.2s cubic-bezier(.22, .9, .25, 1) .25s both; }
+    .hero__car :global(.car__body) { transform-origin: 236px 300px; animation: settle 1s var(--ease-out) 2.05s both; }
+    @keyframes drive-in { from { transform: translateX(72vw); } }
+    @keyframes wheel-in { from { transform: rotate(960deg); } }
+    @keyframes settle {
+      0% { transform: none; }
+      30% { transform: rotate(-.7deg) translateY(1.5px); }
+      65% { transform: rotate(.25deg); }
+      100% { transform: none; }
+    }
+    .hero__scroll-line::after { animation: scroll-hint 2.4s var(--ease-out) 2.6s infinite; }
+    @keyframes scroll-hint { 0% { transform: translateX(100%); } 50% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+  }
+</style>

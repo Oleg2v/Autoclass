@@ -1,0 +1,159 @@
+---
+import { copy, he } from '../data/copy.js';
+const c = copy.promise;
+const [warranty, keys, parts, pickup] = c.items;
+---
+<section class="pro section" id="promise" data-cid="promise" aria-labelledby="pro-title">
+  <div class="wrap">
+    <header class="pro__head">
+      <p class="eyebrow" data-reveal>{he(c.eyebrow)}</p>
+      <h2 class="display h2" id="pro-title" data-reveal style="--d:1">{he(c.h2)}</h2>
+    </header>
+
+    <ul class="pro__grid">
+      <li class="pro__tile pro__tile--big" data-reveal data-cid="promise-warranty">
+        <div class="pro__ring" data-micro aria-hidden="true">
+          <svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" class="pro__ring-bg" /><circle cx="100" cy="100" r="90" class="pro__ring-fg" pathLength="1" /></svg>
+          <span class="pro__five" data-count="5">5</span>
+        </div>
+        <div>
+          <h3>{he(warranty.title)}</h3>
+          <p>{he(warranty.text)}</p>
+        </div>
+      </li>
+
+      <li class="pro__tile" data-reveal style="--d:1" data-cid="promise-keys">
+        <div class="pro__keys" data-micro aria-hidden="true">
+          <svg viewBox="0 0 160 80">
+            <g class="pro__key pro__key--a"><circle cx="26" cy="40" r="14" /><path d="M40 40h40m-8 0v9m-10-9v6" /></g>
+            <g class="pro__key pro__key--b"><circle cx="134" cy="40" r="14" /><path d="M120 40H80m8 0v9m10-9v6" /></g>
+          </svg>
+        </div>
+        <p class="pro__big display">{he(keys.big)}</p>
+        <h3>{he(keys.title)}</h3>
+        <p>{he(keys.text)}</p>
+      </li>
+
+      <li class="pro__tile" data-reveal style="--d:2" data-cid="promise-parts">
+        <div class="pro__stamp-wrap" data-micro aria-hidden="true">
+          <span class="pro__stamp">{he(parts.big)}</span>
+        </div>
+        <h3>{he(parts.title)}</h3>
+        <p>{he(parts.text)}</p>
+      </li>
+
+      <li class="pro__tile" data-reveal style="--d:3" data-cid="promise-pickup">
+        <div class="pro__route" data-micro aria-hidden="true">
+          <svg viewBox="0 0 220 60">
+            <path class="pro__route-line" d="M196 30 C 150 4, 80 56, 26 30" pathLength="1" />
+            <path class="pro__house" d="M186 34v-12l10-8 10 8v12z" />
+            <rect class="pro__shop" x="8" y="18" width="26" height="20" rx="2" />
+            <circle class="pro__dot" r="5" cx="0" cy="0" />
+          </svg>
+        </div>
+        <p class="pro__big display">{he(pickup.big)}</p>
+        <h3>{he(pickup.title)}</h3>
+        <p>{he(pickup.text)}</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<style>
+  .pro { background: var(--ink); }
+  .pro__grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 1rem;
+    margin-block-start: clamp(2rem, 5vw, 3.5rem);
+  }
+  .pro__tile {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: .5rem;
+    padding: clamp(1.5rem, 2.6vw, 2.25rem);
+    border-radius: var(--radius);
+    background: var(--ink-2);
+    box-shadow: inset 0 0 0 1px var(--line-dark);
+    overflow: hidden;
+  }
+  .pro__tile h3 { font-size: 1.375rem; font-weight: 750; font-stretch: 85%; line-height: 1.2; }
+  .pro__tile p { color: var(--muted-on-dark); }
+  .pro__tile--big { grid-row: span 2; align-content: space-between; gap: 2rem; }
+  .pro__tile--big h3 { font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem); font-weight: 860; font-stretch: 70%; }
+  .pro__tile:nth-child(4) { grid-column: 2 / span 2; }
+  .pro__big { font-size: clamp(1.9rem, 1.4rem + 1.8vw, 2.9rem); color: var(--lime); margin-block-end: .25rem; }
+
+  /* 5-year ring */
+  .pro__ring { position: relative; inline-size: min(100%, 320px); aspect-ratio: 1; }
+  .pro__ring svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; transform: rotate(-90deg) scaleY(-1); }
+  .pro__ring circle { fill: none; stroke-width: 6; }
+  .pro__ring-bg { stroke: var(--line-dark); }
+  .pro__ring-fg { stroke: var(--lime); stroke-dasharray: 1 1; stroke-dashoffset: 0; stroke-linecap: round; }
+  .pro__five {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-weight: 860; font-stretch: 62.5%;
+    font-size: clamp(9rem, 6rem + 8vw, 14rem);
+    line-height: 1;
+    color: var(--lime);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* keys swap */
+  .pro__keys svg { inline-size: 150px; block-size: auto; }
+  .pro__key { fill: none; stroke: var(--lime); stroke-width: 4; stroke-linecap: round; }
+  .pro__key--b { stroke: var(--paper); }
+
+  /* stamp */
+  .pro__stamp-wrap { block-size: 92px; display: flex; align-items: center; }
+  .pro__stamp {
+    display: inline-block;
+    padding: .2rem 1rem .35rem;
+    border: 3px solid var(--lime);
+    border-radius: 10px;
+    color: var(--lime);
+    font-weight: 860;
+    font-stretch: 70%;
+    font-size: 2.6rem;
+    line-height: 1.1;
+    transform: rotate(-8deg);
+  }
+
+  /* pickup route */
+  .pro__route svg { inline-size: 220px; block-size: auto; overflow: visible; }
+  .pro__route-line { fill: none; stroke: var(--muted-on-dark); stroke-width: 2; stroke-dasharray: .02 .02; }
+  .pro__house { fill: none; stroke: var(--paper); stroke-width: 2.5; stroke-linejoin: round; }
+  .pro__shop { fill: var(--lime); }
+  .pro__dot { fill: var(--lime); offset-path: path('M196 30 C 150 4, 80 56, 26 30'); offset-distance: 0%; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .js .pro__ring-fg { stroke-dashoffset: 1; transition: stroke-dashoffset 1.6s var(--ease-out) .1s; }
+    .js .pro__ring.is-on .pro__ring-fg { stroke-dashoffset: 0; }
+    .js .pro__key { transition: transform 1.1s var(--ease-out) .3s; }
+    .js .pro__keys.is-on .pro__key--a { transform: translateX(108px) rotate(360deg); transform-box: fill-box; transform-origin: 20% 50%; }
+    .js .pro__keys.is-on .pro__key--b { transform: translateX(-108px) rotate(-360deg); transform-box: fill-box; transform-origin: 80% 50%; }
+    .js .pro__stamp { opacity: 0; transform: rotate(-8deg) scale(1.9); transition: transform .45s cubic-bezier(.5, 0, .75, 0) .3s, opacity .2s .3s; }
+    .js .pro__stamp-wrap.is-on .pro__stamp { opacity: 1; transform: rotate(-8deg) scale(1); }
+    .js .pro__stamp-wrap.is-on { animation: thud .35s .72s; }
+    @keyframes thud { 40% { transform: translateY(3px); } }
+    .js .pro__route.is-on .pro__dot { animation: drive 2.4s var(--ease-out) .3s both; }
+    @keyframes drive { to { offset-distance: 100%; } }
+  }
+  @media (prefers-reduced-motion: reduce) { .pro__dot { offset-distance: 100%; } }
+
+  @media (max-width: 1000px) {
+    .pro__grid { grid-template-columns: 1fr 1fr; }
+    .pro__tile--big { grid-column: 1 / -1; grid-row: auto; grid-template-columns: auto 1fr; align-items: center; }
+    .pro__tile:nth-child(4) { grid-column: 1 / -1; }
+    .pro__ring { inline-size: 200px; }
+    .pro__five { font-size: 8rem; }
+  }
+  @media (max-width: 640px) {
+    .pro__grid { grid-template-columns: 1fr; }
+    .pro__tile--big { grid-template-columns: 1fr; }
+    .pro__ring { inline-size: 180px; }
+  }
+</style>

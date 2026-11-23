@@ -1,0 +1,139 @@
+---
+import { Picture } from 'astro:assets';
+import Icon from './Icon.astro';
+import { copy, he } from '../data/copy.js';
+import { waLink } from '../data/site.js';
+import body from '../assets/photos/bodywork-rear.jpg';
+import paint from '../assets/photos/paint-booth.jpg';
+import mech from '../assets/photos/mechanics-lift.jpg';
+import claims from '../assets/photos/workshop-sedan.jpg';
+
+const c = copy.services;
+const img = { body, paint, mech, claims } as const;
+const vb = he(copy.verifyBadge);
+---
+<section class="svc section on-light" id="services" data-cid="services" aria-labelledby="svc-title">
+  <div class="wrap">
+    <header class="svc__head">
+      <p class="eyebrow" data-reveal>{he(c.eyebrow)}</p>
+      <h2 class="display h2" id="svc-title" data-reveal style="--d:1">{he(c.h2)}</h2>
+    </header>
+
+    <ol class="svc__list" data-services>
+      {c.items.map((s, i) => (
+        <li class="svc__row" data-service={s.id} data-reveal style={`--d:${i}`} data-cid={`service-${s.id}`} data-verify={s.verify ? vb : undefined}>
+          <span class="svc__num" aria-hidden="true">0{i + 1}</span>
+          <div class="svc__main">
+            <h3 class="svc__title display">{he(s.title)}</h3>
+            <p class="svc__text">{he(s.text)}</p>
+          </div>
+          <div class="svc__photo">
+            <Picture
+              src={img[s.id as keyof typeof img]}
+              alt={he(s.alt)}
+              formats={['avif', 'webp']}
+              widths={[360, 640]}
+              sizes="(max-width: 900px) 92vw, 1px"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <span class="svc__arrow" aria-hidden="true"><Icon name="arrow" /></span>
+        </li>
+      ))}
+    </ol>
+
+    <div class="svc__float" data-service-float aria-hidden="true">
+      {c.items.map((s) => (
+        <div class="svc__float-img" data-float-img={s.id}>
+          <Picture
+            src={img[s.id as keyof typeof img]}
+            alt=""
+            formats={['avif', 'webp']}
+            widths={[420]}
+            sizes="420px"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      ))}
+    </div>
+
+    <p class="svc__more" data-reveal>
+      <a class="btn btn--dark" href={waLink()} target="_blank" rel="noopener"><Icon name="whatsapp" />{he(c.more)}<span class="sr-only">{he(copy.a11y.waNewTab)}</span></a>
+    </p>
+  </div>
+</section>
+
+<style>
+  .svc .wrap { position: relative; }
+  .svc__list { margin-block-start: clamp(2rem, 5vw, 3.5rem); border-block-start: 1px solid var(--line-light); }
+  .svc__row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    align-items: center;
+    gap: 1.5rem;
+    padding-block: clamp(1.5rem, 3vw, 2.5rem);
+    border-block-end: 1px solid var(--line-light);
+    isolation: isolate;
+  }
+  .svc__row::before { /* hover wash, sweeps in reading direction */
+    content: '';
+    position: absolute;
+    inset: 0 calc(var(--pad) * -1);
+    z-index: -1;
+    background: var(--lime);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform .6s var(--ease-out);
+  }
+  .svc__num { font-weight: 700; font-size: .9375rem; color: var(--muted-on-light); align-self: start; padding-block-start: .8rem; }
+  .svc__title { font-size: clamp(2.2rem, 1.2rem + 4vw, 5.2rem); transition: transform .6s var(--ease-out); }
+  .svc__text { margin-block-start: .6rem; max-inline-size: 52ch; color: var(--muted-on-light); }
+  .svc__photo { display: none; }
+  .svc__arrow {
+    display: grid; place-items: center;
+    inline-size: 56px; block-size: 56px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1.5px var(--line-light);
+    transition: transform .6s var(--ease-out), background-color .4s, color .4s;
+  }
+  .svc__arrow :global(svg) { inline-size: 22px; block-size: 22px; }
+  @media (hover: hover) and (pointer: fine) {
+    .svc__row:hover::before { transform: scaleY(1); }
+    .svc__row:hover .svc__title { transform: translateX(-12px); }
+    .svc__row:hover .svc__arrow { background: var(--ink); color: var(--lime); transform: rotate(-45deg); box-shadow: none; }
+    .svc__row:hover .svc__num, .svc__row:hover .svc__text { color: var(--ink); }
+  }
+
+  .svc__float {
+    position: absolute;
+    inset-block-start: 0;
+    left: 0;
+    z-index: 3;
+    inline-size: 340px;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius);
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    clip-path: inset(50% 50% 50% 50% round var(--radius));
+    transition: opacity .3s, clip-path .6s var(--ease-out);
+    box-shadow: 0 30px 60px -20px rgb(0 0 0 / .45);
+  }
+  .svc__float.is-on { opacity: 1; clip-path: inset(0 0 0 0 round var(--radius)); }
+  .svc__float-img { position: absolute; inset: 0; opacity: 0; transition: opacity .35s; }
+  .svc__float-img.is-on { opacity: 1; }
+  .svc__float-img :global(img) { inline-size: 100%; block-size: 100%; object-fit: cover; }
+  .svc__more { margin-block-start: 2.5rem; }
+
+  @media (hover: none), (pointer: coarse), (max-width: 900px) {
+    .svc__float { display: none; }
+    .svc__row { grid-template-columns: 1fr; gap: 1rem; }
+    .svc__num { padding: 0; }
+    .svc__photo { display: block; order: -1; }
+    .svc__photo :global(img) { inline-size: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--radius-sm); }
+    .svc__arrow { display: none; }
+  }
+</style>

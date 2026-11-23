@@ -1,0 +1,120 @@
+---
+import Icon from './Icon.astro';
+import { copy, he } from '../data/copy.js';
+import { telLink, waLink } from '../data/site.js';
+const c = copy.insurance;
+const vb = he(copy.verifyBadge);
+---
+<section class="ins section on-light" id="insurance" data-cid="insurance" aria-labelledby="ins-title">
+  <div class="wrap">
+    <header class="ins__head">
+      <p class="eyebrow" data-reveal>{he(c.eyebrow)}</p>
+      <h2 class="display h2" id="ins-title" data-reveal style="--d:1">{he(c.h2)}</h2>
+      <p class="lead" data-reveal style="--d:2">{he(c.lead)}</p>
+    </header>
+
+    <ol class="ins__steps">
+      {c.steps.map((st, i) => (
+        <li class="ins__step" data-reveal style={`--d:${i + 1}`} data-cid={`ins-step-${i + 1}`}>
+          <span class="ins__num" aria-hidden="true">{i + 1}</span>
+          <h3>{he(st.title)}</h3>
+          <p>{he(st.text)}</p>
+          {i === 0 && (
+            <a class="ins__step-link link" href={waLink()} target="_blank" rel="noopener">
+              {he(copy.hero.cta)}<span class="sr-only">{he(copy.a11y.waNewTab)}</span>
+            </a>
+          )}
+        </li>
+      ))}
+    </ol>
+
+    <article class="ins__garage" data-reveal data-cid="garage" aria-labelledby="garage-title">
+      <div class="ins__garage-head">
+        <h3 class="display" id="garage-title">{he(c.garage.title)}</h3>
+        <p class="ins__tagline serif">{he(c.garage.tagline)}</p>
+      </div>
+      <div class="ins__garage-body">
+        <p data-verify={vb}>{he(c.garage.p1)}</p>
+        <p data-verify={vb}>{he(c.garage.p2)}</p>
+        <p class="ins__key" data-verify={vb}>{he(c.garage.p3)}</p>
+        <a class="btn" href={telLink}><Icon name="phone" />{he(c.garage.cta)}</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<style>
+  .ins__head { max-inline-size: 960px; }
+  .ins__steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-block: clamp(2.5rem, 6vw, 4.5rem);
+    counter-reset: s;
+  }
+  .ins__step {
+    position: relative;
+    padding: clamp(1.5rem, 2.5vw, 2.25rem);
+    border-radius: var(--radius);
+    background: #fff;
+    box-shadow: 0 1px 0 var(--line-light), 0 24px 50px -30px rgb(18 19 16 / .35);
+  }
+  .ins__num {
+    display: block;
+    font-weight: 860;
+    font-stretch: 62.5%;
+    font-size: clamp(4.5rem, 3rem + 4vw, 7rem);
+    line-height: .8;
+    color: var(--lime);
+    -webkit-text-stroke: 1.5px var(--lime-lo);
+    margin-block-end: 1.25rem;
+  }
+  .ins__step h3 { font-size: clamp(1.35rem, 1.1rem + .8vw, 1.75rem); font-weight: 800; font-stretch: 80%; line-height: 1.1; margin-block-end: .6rem; }
+  .ins__step p { color: var(--muted-on-light); }
+  .ins__step-link { display: inline-block; margin-block-start: 1rem; font-weight: 700; color: var(--ink); }
+  .ins__step:not(:last-child)::after { /* connector, pointing in reading direction */
+    content: '';
+    position: absolute;
+    inset-block-start: 3.2rem;
+    inset-inline-end: -1rem;
+    inline-size: 1rem;
+    block-size: 2px;
+    background: var(--ink);
+    opacity: .25;
+  }
+
+  .ins__garage {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    padding: clamp(1.75rem, 5vw, 4.5rem);
+    border-radius: calc(var(--radius) * 1.5);
+    background: var(--ink);
+    color: var(--text-on-dark);
+    position: relative;
+    overflow: hidden;
+    color-scheme: dark;
+  }
+  .ins__garage::before { /* masking-tape stripe */
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: 6px;
+    background: repeating-linear-gradient(-45deg, var(--lime) 0 14px, var(--ink) 14px 28px);
+  }
+  .ins__garage h3 { font-size: clamp(2.3rem, 1.4rem + 3.6vw, 4.6rem); color: var(--lime); }
+  .ins__tagline { margin-block-start: 1.25rem; font-size: clamp(1.25rem, 1rem + .8vw, 1.6rem); line-height: 1.3; color: var(--text-on-dark); max-inline-size: 22ch; }
+  .ins__garage-body { display: grid; gap: 1rem; align-content: start; }
+  .ins__garage-body p { color: var(--muted-on-dark); font-size: 1.0625rem; }
+  .ins__key { color: var(--text-on-dark) !important; font-weight: 600; font-size: 1.1875rem !important; padding-inline-start: 1rem; border-inline-start: 3px solid var(--lime); }
+  .ins__garage-body .btn { justify-self: start; margin-block-start: .75rem; }
+  .ins__garage :focus-visible { outline-color: var(--lime); }
+
+  @media (max-width: 900px) {
+    .ins__steps { grid-template-columns: 1fr; }
+    .ins__step:not(:last-child)::after { inset-inline-end: auto; inset-inline-start: 2.6rem; inset-block-start: auto; inset-block-end: -1rem; inline-size: 2px; block-size: 1rem; }
+    .ins__garage { grid-template-columns: 1fr; }
+    .ins__garage-body .btn { justify-self: stretch; }
+  }
+</style>

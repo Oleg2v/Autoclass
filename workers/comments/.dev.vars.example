@@ -1,0 +1,11 @@
+# Copy to .dev.vars for `npx wrangler dev` (the real .dev.vars is gitignored).
+# Dummy values only. In production use `npx wrangler secret put <NAME>`.
+
+REVIEW_KEY=change-me-dev-key
+
+# Optional notifications. Leave commented out locally so nothing external is called.
+# NTFY_TOPIC=autoclass-review-3f9c2a7e1b
+# NOTIFY_EMAIL=owner@example.com
+# WEBHOOK_URL=https://example.com/hooks/autoclass
+# NTFY_SERVER=https://ntfy.sh
+# PUBLIC_SITE_URL=http://localhost:4321

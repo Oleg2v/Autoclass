@@ -1,0 +1,128 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import { copy, he } from '../data/copy.js';
+import { BUSINESS, SITE_URL, HOURS, GOOGLE, waLink } from '../data/site.js';
+
+const title = he(copy.meta.title);
+const description = he(copy.meta.description);
+const canonical = new URL('/', SITE_URL).href;
+const ogImage = new URL('/og.jpg', SITE_URL).href;
+const noindex = import.meta.env.PUBLIC_NOINDEX === '1';
+
+const DAY = { sun: 'Sunday', mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday' };
+const ld = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${canonical}#org`,
+      name: BUSINESS.nameHe,
+      alternateName: [BUSINESS.shortHe, BUSINESS.nameEn],
+      url: canonical,
+      logo: new URL('/logo.png', SITE_URL).href,
+      foundingDate: String(BUSINESS.founded),
+      telephone: BUSINESS.phoneTel,
+      email: BUSINESS.email,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${canonical}#website`,
+      url: canonical,
+      name: BUSINESS.nameHe,
+      inLanguage: 'he-IL',
+      publisher: { '@id': `${canonical}#org` },
+    },
+    {
+      '@type': ['AutoBodyShop', 'AutoRepair'],
+      '@id': `${canonical}#shop`,
+      name: BUSINESS.nameHe,
+      alternateName: BUSINESS.nameEn,
+      description,
+      url: canonical,
+      image: ogImage,
+      logo: new URL('/logo.png', SITE_URL).href,
+      telephone: BUSINESS.phoneTel,
+      email: BUSINESS.email,
+      foundingDate: String(BUSINESS.founded),
+      parentOrganization: { '@id': `${canonical}#org` },
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: BUSINESS.street,
+        addressLocality: BUSINESS.city,
+        addressRegion: 'מחוז תל אביב',
+        addressCountry: BUSINESS.country,
+      },
+      areaServed: [{ '@type': 'City', name: 'חולון' }, { '@type': 'Place', name: 'גוש דן' }],
+      knowsLanguage: 'he',
+      potentialAction: { '@type': 'CommunicateAction', target: waLink(), name: he(copy.hero.cta) },
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: he(copy.services.h2),
+        itemListElement: copy.services.items.map((s) => ({
+          '@type': 'Offer',
+          itemOffered: { '@type': 'Service', name: he(s.title), description: he(s.text) },
+        })),
+      },
+      ...(HOURS ? {
+        openingHoursSpecification: HOURS.filter((h) => h.opens).map((h) => ({
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: h.days.map((d) => `https://schema.org/${DAY[d]}`),
+          opens: h.opens,
+          closes: h.closes,
+        })),
+      } : {}),
+      ...(GOOGLE.profileUrl ? { hasMap: GOOGLE.profileUrl, sameAs: [GOOGLE.profileUrl] } : {}),
+      ...(GOOGLE.rating && GOOGLE.count ? {
+        aggregateRating: { '@type': 'AggregateRating', ratingValue: GOOGLE.rating, reviewCount: GOOGLE.count, bestRating: '5' },
+      } : {}),
+    },
+  ],
+};
+---
+<!doctype html>
+<html lang="he" dir="rtl" class="no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content="#121310" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="preload" href="/fonts/noto-heb.woff2" as="font" type="font/woff2" crossorigin />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="he_IL" />
+    <meta property="og:site_name" content={BUSINESS.nameHe} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={he(copy.meta.ogAlt)} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script is:inline>document.documentElement.classList.replace('no-js', 'js');</script>
+    <script is:inline>(()=>{try{const k=new URLSearchParams(location.search).get('review');if(k)localStorage.setItem('acr-key',k);if(k||localStorage.getItem('acr-key')){document.documentElement.classList.add('is-review');addEventListener('load',()=>{const s=document.createElement('script');s.type='module';s.src='/review/review.js';document.head.append(s)})}}catch(e){}})()</script>
+    <script type="application/ld+json" set:html={JSON.stringify(ld)} />
+  </head>
+  <body>
+    <a class="skip" href="#main">{he(copy.a11y.skip)}</a>
+    <Header />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <slot name="after" />
+    <div class="cursor" aria-hidden="true"><div class="cursor__ring"><span></span></div><div class="cursor__dot"></div></div>
+    <script>
+      import '../scripts/app.js';
+    </script>
+  </body>
+</html>

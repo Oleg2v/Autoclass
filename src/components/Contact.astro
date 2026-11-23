@@ -1,0 +1,122 @@
+---
+import Icon from './Icon.astro';
+import { copy, he } from '../data/copy.js';
+import { BUSINESS, HOURS, telLink, waLink, mailLink, mapsEmbed, mapsSearch, wazeLink } from '../data/site.js';
+const c = copy.contact;
+---
+<section class="con section" id="contact" data-cid="contact" aria-labelledby="con-title">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal>{he(c.eyebrow)}</p>
+    <h2 class="display con__title" id="con-title" data-reveal style="--d:1">{he(c.h2)}</h2>
+    <p class="lead" data-reveal style="--d:2">{he(c.lead)}</p>
+
+    <div class="con__grid">
+      <div class="con__actions" data-reveal>
+        <a class="btn btn--lg con__wa" href={waLink()} target="_blank" rel="noopener" data-cid="contact-wa" data-cursor-label={he(copy.headerWa)}>
+          <Icon name="whatsapp" />{he(c.wa)}<span class="sr-only">{he(copy.a11y.waNewTab)}</span>
+        </a>
+        <a class="con__phone" href={telLink} data-cid="contact-phone">
+          <span class="con__label">{he(c.phone)}</span>
+          <span class="ltr display">{BUSINESS.phoneDisplay}</span>
+        </a>
+
+        <dl class="con__info">
+          <div>
+            <dt><Icon name="pin" />{he(c.address)}</dt>
+            <dd>
+              <address>{he(c.addressLine)}</address>
+              <span class="con__nav">
+                <a class="link" href={wazeLink} target="_blank" rel="noopener">{he(c.waze)}<span class="sr-only">{he(copy.a11y.newTab)}</span></a>
+                <a class="link" href={mapsSearch} target="_blank" rel="noopener">{he(c.gmaps)}<span class="sr-only">{he(copy.a11y.newTab)}</span></a>
+              </span>
+            </dd>
+          </div>
+          <div data-cid="hours" data-verify={HOURS ? undefined : he(copy.verifyBadge)}>
+            <dt><Icon name="clock" />{he(c.hours)}</dt>
+            <dd>
+              {HOURS ? (
+                <ul class="con__hours">
+                  {HOURS.map((h: any) => <li><span>{h.label}</span><span class="ltr">{h.text}</span></li>)}
+                </ul>
+              ) : (
+                <span class="con__pending">{he(c.hoursPending)}</span>
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt><Icon name="mail" />{he(c.email)}</dt>
+            <dd><a class="link ltr" href={mailLink}>{BUSINESS.email}</a></dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="con__map" data-map={mapsEmbed} data-map-title={he(c.mapTitle)} data-reveal style="--d:1" data-cid="map">
+        <svg class="con__map-art" viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+          <g fill="none" stroke="currentColor" stroke-width="1">
+            <path d="M-10 70 L410 40 M-10 160 L410 150 M-10 250 L410 270 M60 -10 L90 310 M200 -10 L180 310 M320 -10 L340 310" opacity=".35" />
+            <path d="M-10 110 C 120 120, 260 90, 410 100 M130 -10 C 140 100, 120 200, 140 310" stroke-width="6" opacity=".18" />
+          </g>
+          <g class="con__map-pin">
+            <circle cx="200" cy="150" r="34" fill="currentColor" opacity=".12" />
+            <circle cx="200" cy="150" r="10" fill="currentColor" />
+          </g>
+        </svg>
+        <div class="con__map-ui">
+          <button class="btn con__map-btn" type="button" data-map-load><Icon name="pin" />{he(c.mapShow)}</button>
+          <p class="con__map-note">{he(c.mapNote)}</p>
+          <noscript><p class="con__map-note">{he(c.mapNoscript)}</p></noscript>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<style>
+  .con { background: var(--ink); padding-block-end: clamp(4rem, 8vw, 6rem); }
+  .con__title { font-size: clamp(3rem, 1.6rem + 7vw, 9rem); margin-block: .9rem 1.25rem; max-inline-size: 12ch; }
+  .con__grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(2rem, 5vw, 5rem); margin-block-start: clamp(2.5rem, 6vw, 4.5rem); align-items: stretch; }
+  .con__actions { display: grid; gap: 1.75rem; align-content: start; }
+  .con__wa { justify-self: start; }
+  .con__phone { display: grid; text-decoration: none; inline-size: fit-content; }
+  .con__label { font-size: .875rem; color: var(--muted-on-dark); }
+  .con__phone .display { font-size: clamp(2.6rem, 1.8rem + 3vw, 4.6rem); color: var(--lime); line-height: 1; transition: color .3s; }
+  .con__phone:hover .display { color: var(--lime-hi); }
+  .con__info { display: grid; gap: 1.25rem; margin: 0; }
+  .con__info > div { display: grid; grid-template-columns: 150px 1fr; gap: 1rem; padding-block-start: 1.25rem; border-block-start: 1px solid var(--line-dark); }
+  .con__info dt { display: flex; gap: .5rem; align-items: center; font-weight: 600; color: var(--muted-on-dark); }
+  .con__info dt :global(svg) { inline-size: 1.15rem; block-size: 1.15rem; color: var(--lime); }
+  .con__info dd { margin: 0; }
+  .con__info address { font-style: normal; font-weight: 600; }
+  .con__nav { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin-block-start: .5rem; font-size: .9375rem; }
+  .con__nav a { display: inline-block; padding-block: .35rem; }
+  .con__pending { color: var(--muted-on-dark); }
+  .con__hours li { display: flex; justify-content: space-between; gap: 1rem; }
+
+  .con__map {
+    position: relative;
+    min-block-size: 380px;
+    border-radius: calc(var(--radius) * 1.4);
+    overflow: hidden;
+    background: var(--ink-2);
+    box-shadow: inset 0 0 0 1px var(--line-dark);
+    color: var(--lime);
+  }
+  .con__map-art { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+  .con__map-ui { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .75rem; padding: 1.5rem; text-align: center; color: var(--text-on-dark); }
+  .con__map-note { font-size: .8125rem; color: var(--muted-on-dark); max-inline-size: 30ch; }
+  .con__map :global(iframe) { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; border: 0; }
+  .con__map.is-loaded .con__map-ui, .con__map.is-loaded .con__map-art { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .con__map-pin circle:first-child { transform-origin: 200px 150px; animation: map-ping 2.4s var(--ease-out) infinite; }
+    @keyframes map-ping { from { transform: scale(.4); opacity: .5; } to { transform: scale(2.2); opacity: 0; } }
+  }
+
+  @media (max-width: 900px) {
+    .con__grid { grid-template-columns: 1fr; }
+    .con__wa { justify-self: stretch; }
+    .con__info > div { grid-template-columns: 1fr; gap: .4rem; }
+    .con__map { min-block-size: 300px; }
+  }
+</style>

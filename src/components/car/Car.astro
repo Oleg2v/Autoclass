@@ -1,0 +1,223 @@
+---
+// Generic SVG sedan with two morphable states (damaged → restored).
+// `prefix` keeps gradient/clip ids unique when the car is used twice on the page.
+// `variant="hero"` renders a lighter copy (no blueprint layer).
+import * as G from './geometry.js';
+
+interface Props {
+  prefix: string;
+  variant?: 'hero' | 'story';
+  label: string;
+  class?: string;
+}
+const { prefix: p, variant = 'story', label, class: cls = '' } = Astro.props;
+const story = variant === 'story';
+const id = (s: string) => `${p}-${s}`;
+const url = (s: string) => `url(#${p}-${s})`;
+
+// Soft sine edge for the paint reveal; the clip path slides from x=1080 (rear) to x=-80 (nose).
+const wave = (() => {
+  let d = 'M 0 -20';
+  for (let i = 0; i < 6; i++) {
+    const y0 = -20 + i * 75;
+    const a = i % 2 ? 24 : -24;
+    d += ` C ${a} ${y0 + 25} ${a} ${y0 + 50} 0 ${y0 + 75}`;
+  }
+  return d + ' L 1400 430 L 1400 -20 Z';
+})();
+
+const spokes = Array.from({ length: 10 }, (_, i) => i * 36);
+const archPath = (cx: number) => {
+  const dx = Math.sqrt(G.ARCH_R ** 2 - (G.ROCKER_Y - 298) ** 2);
+  return `M ${cx - dx} ${G.ROCKER_Y} A ${G.ARCH_R} ${G.ARCH_R} 0 1 1 ${cx + dx} ${G.ROCKER_Y} Z`;
+};
+// Shared vertical "studio reflection" gradient: sky → horizon dip under the shoulder → ground bounce.
+const Y1 = 118, Y2 = 340;
+const at = (y: number) => ((y - Y1) / (Y2 - Y1)).toFixed(3);
+---
+<svg
+  class:list={['car', `car--${variant}`, cls]}
+  viewBox={`0 0 ${G.VIEW.w} ${G.VIEW.h}`}
+  role="img"
+  aria-label={label}
+  data-car={p}
+  focusable="false"
+>
+  <defs>
+    <linearGradient id={id('paint')} gradientUnits="userSpaceOnUse" x1="0" y1={Y1} x2="0" y2={Y2}>
+      <stop offset="0" stop-color="#f6fbb2" />
+      <stop offset={at(196)} stop-color="#e2ec4c" />
+      <stop offset={at(214)} stop-color="#c9d81c" />
+      <stop offset={at(222)} stop-color="#9caa0d" />
+      <stop offset={at(262)} stop-color="#bccc16" />
+      <stop offset={at(300)} stop-color="#97a40c" />
+      <stop offset="1" stop-color="#4a5203" />
+    </linearGradient>
+    <linearGradient id={id('worn')} gradientUnits="userSpaceOnUse" x1="0" y1={Y1} x2="0" y2={Y2}>
+      <stop offset="0" stop-color="#d4d7cf" />
+      <stop offset={at(214)} stop-color="#a9ada5" />
+      <stop offset={at(222)} stop-color="#7f837c" />
+      <stop offset={at(262)} stop-color="#979b93" />
+      <stop offset="1" stop-color="#4b4f49" />
+    </linearGradient>
+    <linearGradient id={id('primer')} gradientUnits="userSpaceOnUse" x1="0" y1={Y1} x2="0" y2={Y2}>
+      <stop offset="0" stop-color="#e3e4de" />
+      <stop offset="1" stop-color="#a3a69e" />
+    </linearGradient>
+    <linearGradient id={id('glass')} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#36403c" />
+      <stop offset=".6" stop-color="#121715" />
+      <stop offset="1" stop-color="#070908" />
+    </linearGradient>
+    <linearGradient id={id('sweep')} x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0" />
+      <stop offset=".5" stop-color="#fff" stop-opacity=".9" />
+      <stop offset="1" stop-color="#fff" stop-opacity="0" />
+    </linearGradient>
+    <radialGradient id={id('dent')} cx=".5" cy=".55" r=".5">
+      <stop offset="0" stop-color="#000" stop-opacity=".6" />
+      <stop offset=".6" stop-color="#000" stop-opacity=".22" />
+      <stop offset="1" stop-color="#000" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id={id('dentLit')} cx=".5" cy=".5" r=".5">
+      <stop offset=".55" stop-color="#fff" stop-opacity="0" />
+      <stop offset=".82" stop-color="#fff" stop-opacity=".38" />
+      <stop offset="1" stop-color="#fff" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id={id('filler')} cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#d8c79b" stop-opacity=".95" />
+      <stop offset=".7" stop-color="#cdbf98" stop-opacity=".7" />
+      <stop offset="1" stop-color="#c9c3ad" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id={id('rim')} cx=".42" cy=".38" r=".62">
+      <stop offset="0" stop-color="#f3f5ef" />
+      <stop offset=".55" stop-color="#a7aba3" />
+      <stop offset="1" stop-color="#454841" />
+    </radialGradient>
+    <radialGradient id={id('tyre')} cx=".5" cy=".5" r=".5">
+      <stop offset=".72" stop-color="#1a1b18" />
+      <stop offset=".9" stop-color="#2b2d28" />
+      <stop offset="1" stop-color="#121311" />
+    </radialGradient>
+    <radialGradient id={id('beam')} cx="1" cy=".5" r="1" fx="1" fy=".5">
+      <stop offset="0" stop-color="#fbffd8" stop-opacity=".75" />
+      <stop offset=".35" stop-color="#fbffd8" stop-opacity=".22" />
+      <stop offset="1" stop-color="#fbffd8" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id={id('shadow')} cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#000" stop-opacity=".75" />
+      <stop offset="1" stop-color="#000" stop-opacity="0" />
+    </radialGradient>
+    <clipPath id={id('clip')}>
+      <path data-morph="body" d={G.body.damaged} data-a={G.body.damaged} data-b={G.body.restored} />
+    </clipPath>
+    <clipPath id={id('wave')}>
+      <path data-wave d={wave} transform="translate(1080 0)" />
+    </clipPath>
+  </defs>
+
+  <!-- ground shadow -->
+  <ellipse cx="503" cy={G.VIEW.ground} rx="468" ry="15" fill={url('shadow')} />
+  <ellipse cx="236" cy={G.VIEW.ground} rx="78" ry="7" fill="#000" opacity=".55" />
+  <ellipse cx="764" cy={G.VIEW.ground} rx="78" ry="7" fill="#000" opacity=".55" />
+
+  <!-- headlight beam (delivery stage) -->
+  <ellipse class="car__beam" cx="-60" cy="250" rx="170" ry="70" fill={url('beam')} opacity="0" />
+
+  <!-- wheel-arch interiors -->
+  <g fill="#0b0c0a">{G.WHEELS.map((w) => <path d={archPath(w.cx)} />)}</g>
+
+  <g class="car__body">
+    <path data-morph="body" d={G.body.damaged} data-a={G.body.damaged} data-b={G.body.restored} fill={url('worn')} />
+
+    <g clip-path={url('clip')}>
+      <g class="car__primer" opacity="0">
+        <rect x="0" y="0" width="1000" height="400" fill={url('primer')} />
+        <ellipse cx="214" cy="246" rx="66" ry="30" fill={url('filler')} />
+        <ellipse cx="432" cy="268" rx="90" ry="38" fill={url('filler')} />
+        <ellipse cx="116" cy="294" rx="46" ry="22" fill={url('filler')} />
+      </g>
+
+      <!-- new paint, revealed by a wave travelling right → left (RTL reading direction) -->
+      <g class="car__paint" clip-path={url('wave')}>
+        <rect x="0" y="0" width="1000" height="400" fill={url('paint')} />
+      </g>
+
+      <g class="car__damage">
+        {G.dents.map((d) => (
+          <g class="car__dent" transform={`rotate(${d.rot} ${d.cx} ${d.cy})`}>
+            <ellipse cx={d.cx} cy={d.cy - 3} rx={d.rx * 1.08} ry={d.ry * 1.15} fill={url('dentLit')} />
+            <ellipse cx={d.cx} cy={d.cy} rx={d.rx} ry={d.ry} fill={url('dent')} />
+          </g>
+        ))}
+        {G.creases.map((c) => (
+          <g class="car__crease">
+            <path data-morph="crease" d={c.damaged} data-a={c.damaged} data-b={c.restored} fill="none" stroke="#000" stroke-opacity=".42" stroke-width="2.4" stroke-linejoin="round" />
+            <path data-morph="crease" d={c.damaged} data-a={c.damaged} data-b={c.restored} fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="1.1" stroke-linejoin="round" transform="translate(0 -2)" />
+          </g>
+        ))}
+        {G.scratches.map((s) => (
+          <path class="car__scratch" d={s} fill="none" stroke="#f4f5f0" stroke-opacity=".75" stroke-width="1.6" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="0" />
+        ))}
+      </g>
+
+      <path data-morph="shoulder" d={G.shoulder.damaged} data-a={G.shoulder.damaged} data-b={G.shoulder.restored} fill="none" stroke="#fff" stroke-opacity=".42" stroke-width="2" />
+      <path data-morph="rocker" d={G.rocker.damaged} data-a={G.rocker.damaged} data-b={G.rocker.restored} fill="none" stroke="#000" stroke-opacity=".25" stroke-width="2" />
+
+      <!-- lacquer sweep (scroll-driven in the story, pointer/tilt-driven elsewhere) -->
+      <rect class="car__sweep" x="-90" y="-40" width="180" height="480" fill={url('sweep')} opacity="0" transform="translate(1100 0) skewX(-20)" />
+    </g>
+
+    <g fill="none" stroke="#0b0c0a" stroke-opacity=".5" stroke-width="1.5">
+      <path d={G.doorSeams.front} />
+      <path d={G.doorSeams.middle} />
+      <path d={G.doorSeams.rear} />
+    </g>
+
+    <path d={G.glass} fill={url('glass')} />
+    <path d={G.glassReflect} fill="#fff" opacity=".07" />
+    <path d={G.glassTopLine} fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="1.2" />
+    <path d={G.pillarB} fill="#0b0d0b" />
+    <path d={G.mirror} fill="#111310" />
+    {G.handles.map((h) => <rect x={h.x} y={h.y} width={h.w} height={h.h} rx="3.5" fill="#0e100d" opacity=".7" />)}
+
+    <path data-morph="intake" d={G.intake.damaged} data-a={G.intake.damaged} data-b={G.intake.restored} fill="#0c0d0b" />
+    <path d={G.sill} fill="#11130f" />
+
+    <path class="car__tail" d={G.taillight} fill="#7a1810" />
+    <path data-morph="headlight" d={G.headlight.damaged} data-a={G.headlight.damaged} data-b={G.headlight.restored} class="car__head" fill="#e4e9e1" fill-opacity=".8" stroke="#0c0d0b" stroke-width="1.5" />
+    <path class="car__cracks" d={G.headlightCracks} fill="none" stroke="#262824" stroke-width="1.3" />
+
+  </g>
+
+  <g class="car__wheels">
+  {G.WHEELS.map((w) => (
+    <g class="car__wheel" data-wheel={w.id}>
+      <circle cx={w.cx} cy={w.cy} r={w.r} fill={url('tyre')} />
+      <circle cx={w.cx} cy={w.cy} r="44" fill="#1d1f1b" />
+      <path d={`M ${w.cx + 18} ${w.cy - 34} A 38 38 0 0 1 ${w.cx + 36} ${w.cy - 10}`} stroke="#b9ca13" stroke-width="9" stroke-linecap="round" fill="none" />
+      <g class="car__rim" style={`transform-origin:${w.cx}px ${w.cy}px`}>
+        <circle cx={w.cx} cy={w.cy} r="44" fill="none" stroke={url('rim')} stroke-width="5" />
+        {spokes.map((a) => (
+          <path d={`M ${w.cx - 3.5} ${w.cy - 9} L ${w.cx - 6} ${w.cy - 42} L ${w.cx + 1} ${w.cy - 42} L ${w.cx + 2.5} ${w.cy - 9} Z`} fill={url('rim')} transform={`rotate(${a} ${w.cx} ${w.cy})`} />
+        ))}
+        <circle cx={w.cx} cy={w.cy} r="11" fill="#c9ccc4" />
+        <circle cx={w.cx} cy={w.cy} r="5" fill="#2a2c27" />
+      </g>
+    </g>
+  ))}
+  </g>
+
+  {story && (
+    <path data-morph="body" class="car__outline" d={G.body.damaged} data-a={G.body.damaged} data-b={G.body.restored} fill="none" stroke="currentColor" stroke-width="1.6" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" opacity="0" />
+  )}
+  {story && (
+    <g class="car__blueprint" opacity="0" fill="none" stroke="currentColor" stroke-width="1">
+      <path d="M 66 386 L 940 386 M 66 378 L 66 394 M 940 378 L 940 394" />
+      <path d="M 236 298 L 236 386 M 764 298 L 764 386" stroke-dasharray="3 4" />
+      <path d="M 972 119 L 972 362 M 964 119 L 980 119 M 964 362 L 980 362" />
+      <circle cx="236" cy="298" r="77" stroke-dasharray="2 5" />
+      <circle cx="764" cy="298" r="77" stroke-dasharray="2 5" />
+    </g>
+  )}
+</svg>

@@ -1,0 +1,12 @@
+# Cloudflare Pages project for the Auto Class site (static dist/ + Pages Functions).
+# The review comments API lives in a separate Worker (workers/comments) and is
+# reached from functions/api/comments/[[path]].js through the COMMENTS binding.
+# Deploy the Worker first: cd workers/comments && npx wrangler deploy
+
+name = "autoclass-kikkey"
+pages_build_output_dir = "./dist"
+compatibility_date = "2025-09-01"
+
+[[services]]
+binding = "COMMENTS"
+service = "autoclass-comments"

@@ -1,0 +1,111 @@
+---
+import Icon from './Icon.astro';
+import { copy, he } from '../data/copy.js';
+import { GOOGLE, mapsSearch } from '../data/site.js';
+const c = copy.reviews;
+const h = copy.history;
+const profile = GOOGLE.profileUrl || mapsSearch;
+const hasReviews = GOOGLE.reviews.length > 0;
+---
+<section class="rev section on-light" id="reviews" data-cid="reviews" aria-labelledby="rev-title">
+  <div class="wrap">
+    <header class="rev__head">
+      <div>
+        <p class="eyebrow" data-reveal>{he(c.eyebrow)}</p>
+        <h2 class="display h2" id="rev-title" data-reveal style="--d:1">{he(c.h2)}</h2>
+      </div>
+      {GOOGLE.rating && (
+        <div class="rev__score" data-reveal style="--d:2">
+          <span class="rev__num">{GOOGLE.rating}</span>
+          <span class="rev__stars" role="img" aria-label={`${GOOGLE.rating} ${he(c.starsLabel)}`}>
+            {[0, 1, 2, 3, 4].map(() => <Icon name="star" />)}
+          </span>
+          <span class="rev__count">{he(c.rating)} · {GOOGLE.count} {he(c.reviewsWord)}</span>
+        </div>
+      )}
+    </header>
+
+    {hasReviews ? (
+      <ul class="rev__list">
+        {GOOGLE.reviews.map((r: any, i: number) => (
+          <li class="rev__card" data-reveal style={`--d:${i % 3}`}>
+            <blockquote>
+              <p>{r.text}</p>
+            </blockquote>
+            <footer class="rev__by">
+              <span class="rev__avatar" aria-hidden="true">{r.author.trim().charAt(0)}</span>
+              <span><b>{r.author}</b><span class="rev__meta">{r.stars} ★ · {r.date}</span></span>
+            </footer>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div class="rev__placeholder" data-reveal data-verify={he(copy.verifyBadge)}>
+        <p class="rev__ph-title">{he(c.placeholderTitle)}</p>
+        <p>{he(c.placeholderText)}</p>
+      </div>
+    )}
+
+    <a class="btn btn--dark rev__all" href={profile} target="_blank" rel="noopener">
+      {he(c.all)}<Icon name="arrow" /><span class="sr-only">{he(copy.a11y.newTab)}</span>
+    </a>
+
+    <div class="hist" data-cid="history">
+      <h3 class="display hist__title" data-reveal>{he(h.h2)}</h3>
+      <ol class="hist__line">
+        {h.items.map((it, i) => (
+          <li class="hist__item" data-reveal style={`--d:${i + 1}`}>
+            <span class="hist__year display">
+              {i === 0 ? <span data-count="1960" data-from="1900">1960</span> : he(it.year)}
+            </span>
+            <p>{he(it.text)}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </div>
+</section>
+
+<style>
+  .rev__head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1.5rem; }
+  .rev__score { display: grid; justify-items: end; gap: .2rem; }
+  .rev__num { font-weight: 860; font-stretch: 62.5%; font-size: 5rem; line-height: .9; }
+  .rev__stars { display: flex; gap: 2px; color: #e3a008; }
+  .rev__stars :global(svg) { inline-size: 20px; block-size: 20px; }
+  .rev__count { font-size: .875rem; color: var(--muted-on-light); }
+  .rev__list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-block-start: clamp(2rem, 5vw, 3rem); }
+  .rev__card { display: grid; gap: 1.25rem; align-content: space-between; padding: 1.75rem; border-radius: var(--radius); background: #fff; box-shadow: 0 1px 0 var(--line-light), 0 24px 50px -30px rgb(18 19 16 / .3); }
+  .rev__card blockquote p { font-size: 1.0625rem; }
+  .rev__by { display: flex; gap: .75rem; align-items: center; }
+  .rev__by b { display: block; font-weight: 700; }
+  .rev__avatar { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--lime); font-weight: 800; }
+  .rev__meta { font-size: .8125rem; color: var(--muted-on-light); }
+  .rev__placeholder {
+    margin-block-start: clamp(2rem, 5vw, 3rem);
+    padding: clamp(1.75rem, 4vw, 3rem);
+    border-radius: var(--radius);
+    border: 2px dashed rgb(18 19 16 / .25);
+    display: grid;
+    gap: .5rem;
+    max-inline-size: 760px;
+  }
+  .rev__ph-title { font-weight: 800; font-stretch: 80%; font-size: 1.5rem; }
+  .rev__placeholder p:last-child { color: var(--muted-on-light); }
+  .rev__all { margin-block-start: 1.75rem; }
+  .rev__all :global(svg) { inline-size: 20px; }
+
+  .hist { margin-block-start: clamp(5rem, 10vw, 8rem); display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+  .hist__title { font-size: clamp(3rem, 2rem + 5vw, 7rem); }
+  .hist__line { display: grid; gap: 0; border-inline-start: 2px solid var(--ink); }
+  .hist__item { position: relative; display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 1.5rem; align-items: baseline; padding: 1.25rem 1.75rem 1.5rem 0; padding-inline-start: 1.75rem; border-block-end: 1px solid var(--line-light); }
+  .hist__item::before { content: ''; position: absolute; inset-inline-start: -8px; inset-block-start: 1.9rem; inline-size: 14px; block-size: 14px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 4px var(--paper), 0 0 0 5.5px var(--ink); }
+  .hist__year { font-size: clamp(2rem, 1.4rem + 2vw, 3.2rem); color: var(--lime-ink); font-variant-numeric: tabular-nums; }
+  .hist__item p { color: var(--muted-on-light); font-size: 1.0625rem; }
+
+  @media (max-width: 900px) {
+    .rev__list { grid-template-columns: 1fr; }
+    .rev__score { justify-items: start; }
+    .hist { grid-template-columns: 1fr; }
+    .hist__item { grid-template-columns: 1fr; gap: .25rem; }
+  }
+</style>

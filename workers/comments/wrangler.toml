@@ -1,0 +1,29 @@
+# Auto Class review comments API.
+# Reached by the Pages project through a service binding (see /wrangler.toml at the
+# repo root and /functions/api/comments/[[path]].js), and directly on workers.dev.
+#
+# Secrets (set with `npx wrangler secret put <NAME>`, never commit values):
+#   REVIEW_KEY    required  shared key from the review link (?review=<key>)
+#   NTFY_TOPIC    optional  ntfy.sh topic for push / e-mail notifications
+#   NOTIFY_EMAIL  optional  address ntfy.sh forwards each notification to
+#   WEBHOOK_URL   optional  generic JSON webhook, or a Telegram sendMessage URL
+# Local development: copy .dev.vars.example to .dev.vars.
+
+name = "autoclass-comments"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[vars]
+PUBLIC_SITE_URL = "https://autoclass.kikkey.com"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "CommentsRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CommentsRoom"]
+
+[observability]
+enabled = true

@@ -1,0 +1,203 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { copy, he } from '../data/copy.js';
+import { BUSINESS, telLink, waLink } from '../data/site.js';
+---
+<header class="hdr" data-header data-cid="header">
+  <div class="hdr__in wrap">
+    <a class="hdr__logo" href="#top" aria-label={he(copy.a11y.home)}>
+      <Logo class="hdr__mark" />
+    </a>
+
+    <nav class="hdr__nav" aria-label={he(copy.a11y.mainNav)}>
+      <ul>
+        {copy.nav.map((n) => (
+          <li><a href={`#${n.id}`} data-nav={n.id}>{n.he}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="hdr__actions">
+      <a class="hdr__tel" href={telLink} aria-label={he(copy.a11y.callUs)}>
+        <Icon name="phone" />
+        <span class="ltr">{BUSINESS.phoneDisplay}</span>
+      </a>
+      <a class="btn hdr__wa" href={waLink()} target="_blank" rel="noopener" data-cursor-label={he(copy.headerWa)}>
+        <Icon name="whatsapp" />
+        <span>{he(copy.headerWa)}</span>
+        <span class="sr-only">{he(copy.a11y.waNewTab)}</span>
+      </a>
+      <button class="hdr__menu" type="button" popovertarget="menu" aria-label={he(copy.a11y.menuOpen)}>
+        <Icon name="menu" />
+        <span>{he(copy.menuLabel)}</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div id="menu" class="menu" popover aria-label={he(copy.a11y.mainNav)}>
+  <div class="menu__top wrap">
+    <Logo class="menu__mark" />
+    <button class="menu__close" type="button" popovertarget="menu" popovertargetaction="hide" aria-label={he(copy.a11y.menuClose)}>
+      <Icon name="close" />
+    </button>
+  </div>
+  <nav class="menu__nav wrap" aria-label={he(copy.a11y.mainNav)}>
+    <ol>
+      {copy.nav.map((n, i) => (
+        <li style={`--i:${i}`}>
+          <a href={`#${n.id}`} data-menu-link><span class="menu__num" aria-hidden="true">0{i + 1}</span>{n.he}</a>
+        </li>
+      ))}
+    </ol>
+  </nav>
+  <div class="menu__foot wrap">
+    <a class="btn btn--lg" href={waLink()} target="_blank" rel="noopener">
+      <Icon name="whatsapp" />{he(copy.hero.cta)}<span class="sr-only">{he(copy.a11y.waNewTab)}</span>
+    </a>
+    <a class="menu__tel" href={telLink}><Icon name="phone" /><span class="ltr">{BUSINESS.phoneDisplay}</span></a>
+  </div>
+</div>
+
+<style>
+  .hdr {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: 50;
+    block-size: var(--header-h);
+    transition: transform .6s var(--ease-out), background-color .4s, backdrop-filter .4s, box-shadow .4s;
+  }
+  .hdr.is-solid {
+    background: rgb(18 19 16 / .78);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    box-shadow: 0 1px 0 var(--line-dark);
+  }
+  .hdr.is-hidden { transform: translateY(-100%); }
+  .hdr__in {
+    block-size: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .hdr__logo { display: block; color: var(--lime); flex: none; padding-block: .5rem; }
+  .hdr__logo :global(svg) { inline-size: clamp(118px, 12vw, 150px); block-size: auto; }
+  .hdr__nav { margin-inline-start: auto; }
+  .hdr__nav ul { display: flex; gap: clamp(.9rem, 1.8vw, 2rem); }
+  .hdr__nav a {
+    position: relative;
+    display: inline-block;
+    padding-block: .5rem;
+    text-decoration: none;
+    font-size: .9375rem;
+    font-weight: 500;
+    color: var(--muted-on-dark);
+    transition: color .3s;
+  }
+  .hdr__nav a::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: .2rem;
+    block-size: 2px;
+    background: var(--lime);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform .5s var(--ease-out);
+  }
+  .hdr__nav a:hover, .hdr__nav a.is-current { color: var(--text-on-dark); }
+  .hdr__nav a:hover::after, .hdr__nav a.is-current::after { transform: scaleX(1); }
+  .hdr__actions { display: flex; align-items: center; gap: .75rem; }
+  .hdr__tel {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .25rem;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: .9375rem;
+  }
+  .hdr__tel :global(svg) { inline-size: 1.15rem; block-size: 1.15rem; color: var(--lime); }
+  .hdr__wa { min-block-size: 44px; padding: .55rem 1.1rem; font-size: .9375rem; }
+  .hdr__menu {
+    display: none;
+    align-items: center;
+    gap: .4rem;
+    min-block-size: 44px;
+    padding: .5rem .9rem;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(238 237 230 / .08);
+    box-shadow: inset 0 0 0 1px var(--line-dark);
+    font-weight: 600;
+    font-size: .9375rem;
+    cursor: pointer;
+  }
+  .hdr__menu :global(svg) { inline-size: 1.25rem; block-size: 1.25rem; }
+
+  @media (max-width: 1080px) {
+    .hdr__nav { display: none; }
+    .hdr__actions { margin-inline-start: auto; }
+    .hdr__menu { display: inline-flex; }
+  }
+  @media (max-width: 640px) {
+    .hdr__tel span { display: none; }
+    .hdr__tel { inline-size: 44px; block-size: 44px; justify-content: center; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line-dark); }
+    .hdr__wa span:not(.sr-only) { display: none; }
+    .hdr__wa { inline-size: 44px; padding: 0; }
+    .hdr__menu span { display: none; }
+    .hdr__menu { inline-size: 44px; padding: 0; justify-content: center; }
+  }
+
+  /* ── full-screen menu (popover: works without JavaScript) ── */
+  .menu {
+    position: fixed;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100dvh;
+    max-inline-size: none;
+    max-block-size: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--ink);
+    color: var(--text-on-dark);
+    overflow-y: auto;
+    display: none;
+    flex-direction: column;
+  }
+  .menu:popover-open { display: flex; }
+  .menu__top { display: flex; align-items: center; justify-content: space-between; block-size: var(--header-h); flex: none; }
+  .menu__top :global(.menu__mark) { inline-size: 130px; block-size: auto; color: var(--lime); }
+  .menu__close {
+    display: grid; place-items: center;
+    inline-size: 48px; block-size: 48px;
+    border: 0; border-radius: 999px;
+    background: rgb(238 237 230 / .08);
+    cursor: pointer;
+  }
+  .menu__close :global(svg) { inline-size: 1.4rem; block-size: 1.4rem; }
+  .menu__nav { flex: 1; display: flex; align-items: center; }
+  .menu__nav ol { display: grid; gap: .25rem; inline-size: 100%; }
+  .menu__nav a {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding-block: .35rem;
+    text-decoration: none;
+    font-weight: 860;
+    font-stretch: 68%;
+    font-size: clamp(2.6rem, 11vw, 4.5rem);
+    line-height: 1.05;
+  }
+  .menu__num { font-size: .875rem; font-weight: 600; font-stretch: 100%; color: var(--lime); min-inline-size: 1.8rem; }
+  .menu__foot { display: grid; gap: 1rem; padding-block: 1.5rem 2rem; flex: none; }
+  .menu__tel { display: inline-flex; gap: .5rem; align-items: center; justify-content: center; font-weight: 600; text-decoration: none; padding: .75rem; }
+  .menu__tel :global(svg) { inline-size: 1.2rem; block-size: 1.2rem; color: var(--lime); }
+  @media (prefers-reduced-motion: no-preference) {
+    .menu:popover-open li { animation: menu-in .7s var(--ease-out) both; animation-delay: calc(var(--i) * 55ms + 80ms); }
+    @keyframes menu-in { from { opacity: 0; transform: translateY(24px); } }
+  }
+</style>

@@ -1,0 +1,20 @@
+---
+import Car from '../components/car/Car.astro';
+---
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><title>car test</title>
+<style>body{background:#121310;color:#b9ca13;margin:0;display:grid;gap:10px;padding:10px} svg{width:100%;height:auto;display:block;background:#1c1e19}</style></head>
+<body>
+<Car prefix="a" label="test" />
+<Car prefix="b" label="test" />
+<script>
+import { morpher } from '../scripts/morph.js';
+const [a, b] = document.querySelectorAll('svg.car');
+morpher(b)(1);
+b.querySelector('.car__damage').style.opacity = '0';
+b.querySelector('.car__cracks').style.opacity = '0';
+b.querySelector('[data-wave]').setAttribute('transform', 'translate(-60 0)');
+b.querySelector('.car__sweep').setAttribute('opacity', '1');
+b.querySelector('.car__sweep').setAttribute('transform', 'translate(520 0) skewX(-20)');
+b.querySelector('.car__beam').setAttribute('opacity', '1');
+</script>
+</body></html>

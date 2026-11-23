@@ -1,0 +1,39 @@
+---
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import { copy, he } from '../data/copy.js';
+import { BUSINESS } from '../data/site.js';
+const year = new Date().getFullYear();
+---
+<footer class="foot" data-cid="footer">
+  <div class="wrap foot__in">
+    <div class="foot__brand">
+      <Logo class="foot__logo" />
+      <p class="foot__tag serif">{he(copy.footer.tagline)}</p>
+    </div>
+    <nav class="foot__nav" aria-label={he(copy.a11y.footerNav)}>
+      <ul>
+        {copy.nav.map((n) => <li><a href={`#${n.id}`}>{n.he}</a></li>)}
+      </ul>
+    </nav>
+    <div class="foot__base">
+      <p>© {year} {BUSINESS.nameHe}. {he(copy.footer.rights)}</p>
+      <a class="foot__top" href="#top"><Icon name="up" />{he(copy.footer.top)}</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .foot { background: var(--ink); border-block-start: 1px solid var(--line-dark); padding-block: clamp(2.5rem, 5vw, 4rem) 2rem; }
+  .foot__in { display: grid; grid-template-columns: 1fr auto; gap: 2rem; }
+  .foot__brand :global(.foot__logo) { inline-size: 180px; block-size: auto; color: var(--lime); }
+  .foot__tag { margin-block-start: .75rem; font-size: 1.25rem; color: var(--muted-on-dark); }
+  .foot__nav ul { display: grid; grid-template-columns: repeat(2, auto); gap: .25rem 2.5rem; }
+  .foot__nav a { display: inline-block; padding-block: .4rem; text-decoration: none; color: var(--muted-on-dark); }
+  .foot__nav a:hover { color: var(--text-on-dark); }
+  .foot__base { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; padding-block-start: 1.5rem; border-block-start: 1px solid var(--line-dark); font-size: .875rem; color: var(--muted-on-dark); }
+  .foot__top { display: inline-flex; align-items: center; gap: .4rem; text-decoration: none; padding: .25rem 0; }
+  .foot__top :global(svg) { inline-size: 1rem; block-size: 1rem; }
+
+  @media (max-width: 900px) { .foot__in { grid-template-columns: 1fr; } }
+</style>
