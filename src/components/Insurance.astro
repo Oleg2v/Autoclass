@@ -19,6 +19,7 @@ const vb = he(copy.verifyBadge);
           <span class="ins__num" aria-hidden="true">{i + 1}</span>
           <h3>{he(st.title)}</h3>
           <p>{he(st.text)}</p>
+          {st.tip && <p class="ins__tip">{he(st.tip)}</p>}
           {i === 0 && (
             <a class="ins__step-link link" href={waLink()} target="_blank" rel="noopener">
               {he(copy.hero.cta)}<span class="sr-only">{he(copy.a11y.waNewTab)}</span>
@@ -71,6 +72,7 @@ const vb = he(copy.verifyBadge);
   }
   .ins__step h3 { font-size: clamp(1.35rem, 1.1rem + .8vw, 1.75rem); font-weight: 800; font-stretch: 80%; line-height: 1.1; margin-block-end: .6rem; }
   .ins__step p { color: var(--muted-on-light); }
+  .ins__tip { margin-block-start: .75rem; padding: .55rem .8rem; border-radius: var(--radius-sm); background: var(--paper); font-size: .9375rem; color: var(--ink) !important; }
   .ins__step-link { display: inline-block; margin-block-start: 1rem; font-weight: 700; color: var(--ink); }
   .ins__step:not(:last-child)::after { /* connector, pointing in reading direction */
     content: '';
