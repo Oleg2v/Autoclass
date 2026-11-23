@@ -106,8 +106,12 @@ notification never blocks posting (failures are only logged).
     (`/?review=<KEY>#acr-<id>`).
   - Topic names on ntfy.sh are public to anyone who knows them, and the link includes the review key,
     so do not use a guessable topic.
-- **E-mail**: also set `NOTIFY_EMAIL`, and ntfy.sh forwards every notification to that address.
-  ntfy.sh limits how many e-mails anonymous publishers may send per day, so treat it as best effort.
+- **E-mail**: set `NOTIFY_EMAIL` **and** `NTFY_TOKEN` (access token of a free ntfy.sh account:
+  ntfy.sh → Sign up → Account → Access tokens). Since 2025 ntfy.sh refuses e-mail forwarding for
+  anonymous publishers (`40053 anonymous email sending is not allowed`, checked 23.11.2026). Without a
+  token the Worker notices that error and still sends the push notification, just without the e-mail copy.
+- **Telegram** (alternative to e-mail): set `WEBHOOK_URL` to
+  `https://api.telegram.org/bot<token>/sendMessage?chat_id=<chat id>`.
 - **Webhook**: set `WEBHOOK_URL`.
   - A normal URL receives `POST {event, thread, reply, url}`, where `event` is `thread.created` or
     `reply.created`.

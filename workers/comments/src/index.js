@@ -29,7 +29,7 @@ import {
 export { CommentsRoom };
 
 const PREFIX = '/api/comments';
-const ROOM_NAME = 'autoclass';
+const ROOM_NAME = 'autoclass-review-2026';
 const ALLOW = 'GET, POST, PATCH, DELETE, OPTIONS';
 
 const BASE_HEADERS = {

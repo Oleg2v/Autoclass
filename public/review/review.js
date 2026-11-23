@@ -942,6 +942,7 @@ function submitOnCtrlEnter(ta, form) {
 
 function openDraft(anchor, text = '') {
   closePopover(false);
+  unsentAt = 0;
   S.active = { type: 'draft', anchor };
   S.returnFocus = modeBtn;
   const t = T();
@@ -998,6 +999,7 @@ function openThread(id, from) {
   if (!th) return;
   if (!S.mode) setMode(true);
   closePopover(false);
+  unsentAt = 0;
   S.active = { type: 'thread', id };
   S.returnFocus = from || (document.activeElement !== document.body ? document.activeElement : modeBtn);
   buildThreadPopover(th);
@@ -1335,6 +1337,7 @@ async function deleteThread(id) {
   try {
     await api('DELETE', `/${encodeURIComponent(id)}`, null, { clientId: S.client });
     S.threads = S.threads.filter((x) => x.id !== id);
+    S.replyDrafts.delete(id);
     if (S.active && S.active.id === id) closePopover();
     renderAll();
   } catch (e) {

@@ -3,7 +3,7 @@
 Демо одностраничного сайта для **אוטו קלאס – מרכז שירות לרכב** (кузовной ремонт и покраска, הסולל 3, Холон, с 1960 года).
 Клиент — **autoclassltd.com** (не путать с autoclass.co.il — другая компания из Явне).
 
-- Живое демо: **https://autoclass.kikkey.com** (резервный адрес Cloudflare Pages: https://autoclass-kikkey.pages.dev)
+- Живое демо: **https://autoclass.kikkey.com** (зеркало на Cloudflare Pages: https://autoclass-kikkey.pages.dev)
 - Концепция и референсы: [`docs/DESIGN.md`](docs/DESIGN.md)
 - Все тексты на иврите с русским переводом: [`docs/copy-ru-he.md`](docs/copy-ru-he.md)
 - Режим комментариев: [`docs/COMMENTS.md`](docs/COMMENTS.md)
@@ -40,30 +40,36 @@ npm run fonts        # пересобрать сабсеты шрифтов (н�
 | `src/scripts/` | анимации и интерактив (прогрессивное улучшение: без JS страница полная) |
 | `src/assets/photos/` | реальные фото с autoclassltd.com (оптимизируются в AVIF/WebP при сборке) |
 | `workers/comments/` | Worker + Durable Object (SQLite) для комментариев |
-| `functions/api/comments/` | Pages Function: прокси `/api/comments/*` → Worker |
+| `workers/site/` | Worker сайта на autoclass.kikkey.com: статические файлы + прокси `/api/comments/*` |
+| `functions/api/comments/` | Pages Function для зеркала на Pages: прокси `/api/comments/*` → Worker |
 | `public/review/` | виджет комментариев (грузится только по ссылке ревью) |
 
 ---
 
 ## Деплой (Cloudflare)
 
-1. Worker комментариев (один раз и при изменениях):
-   ```bash
-   cd workers/comments
-   npx wrangler deploy
-   npx wrangler secret put REVIEW_KEY     # ключ из ссылки ревью
-   npx wrangler secret put NTFY_TOPIC     # тема уведомлений (секретное имя)
-   npx wrangler secret put NOTIFY_EMAIL   # адрес для писем-уведомлений
-   ```
-2. Сайт (Cloudflare Pages, проект `autoclass-kikkey`):
-   ```bash
-   npm run build
-   npx wrangler pages deploy dist --project-name autoclass-kikkey --branch main
-   ```
-   `wrangler.toml` в корне задаёт `pages_build_output_dir` и service binding `COMMENTS → autoclass-comments`.
-3. Домен `autoclass.kikkey.com` подключён к Pages-проекту как custom domain (CNAME на `autoclass-kikkey.pages.dev`).
+Боевой адрес **https://autoclass.kikkey.com** обслуживает Worker `autoclass` (Workers Static Assets: файлы из `dist/`, учитываются `dist/_headers` и `dist/404.html`) с custom domain — так же, как остальные демо на `*.kikkey.com`. Запросы `/api/comments/*` он передаёт в Worker `autoclass-comments` (Durable Object + SQLite).
+Почему не Pages-домен: у API-токена нет прав на DNS, поэтому Pages не может получить CNAME; Workers Custom Domain создаёт DNS-запись и сертификат сам. Pages-проект `autoclass-kikkey` оставлен зеркалом: https://autoclass-kikkey.pages.dev (те же файлы, `/functions` проксирует тот же API).
 
-Секретов в репозитории нет: ключ ревью, тема ntfy и e-mail хранятся как secrets Worker'а.
+```bash
+# 1. API комментариев (при изменениях в workers/comments)
+cd workers/comments && npx wrangler deploy
+npx wrangler secret put REVIEW_KEY      # ключ из ссылки ревью
+npx wrangler secret put NTFY_TOPIC      # секретное имя темы ntfy (пуш-уведомления)
+npx wrangler secret put NOTIFY_EMAIL    # адрес для писем (работает вместе с NTFY_TOKEN)
+npx wrangler secret put NTFY_TOKEN      # токен бесплатного аккаунта ntfy.sh — нужен для писем
+# 2. Сайт
+cd ../.. && npm run build && cd workers/site && npx wrangler deploy
+# 3. (необязательно) зеркало на Pages
+cd ../.. && npx wrangler pages deploy dist --project-name autoclass-kikkey --branch main
+```
+
+Секретов в репозитории нет: ключ ревью, тема ntfy, e-mail и токены хранятся как secrets Worker'а.
+
+### Уведомления о новых комментариях
+- **Пуш (работает сейчас):** установите приложение ntfy (iOS/Android) или откройте https://ntfy.sh/app и подпишитесь на тему из секрета `NTFY_TOPIC`. Каждое новое сообщение/ответ приходит с текстом и ссылкой, открывающей страницу сразу на нужном пине.
+- **Письмо на e-mail:** ntfy.sh с 2025 года не пересылает письма анонимно (проверено 23.11.2026, ошибка 40053). Нужно один раз завести бесплатный аккаунт на ntfy.sh, создать access token и положить его в секрет `NTFY_TOKEN` — адрес `NOTIFY_EMAIL` уже задан. Пока токена нет, Worker автоматически шлёт пуш без письма.
+- **Альтернатива:** Telegram-бот — секрет `WEBHOOK_URL` = `https://api.telegram.org/bot<token>/sendMessage?chat_id=<id>`.
 
 ---
 

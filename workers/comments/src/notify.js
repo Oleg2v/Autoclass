@@ -26,10 +26,10 @@ export function buildMessage(event, thread, reply) {
   return { title, message: lines.join('\n') };
 }
 
-async function post(url, payload) {
+async function post(url, payload, extraHeaders = {}) {
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    headers: { 'Content-Type': 'application/json; charset=utf-8', ...extraHeaders },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -49,8 +49,18 @@ async function sendNtfy(env, msg, click) {
     tags: ['speech_balloon'],
     click,
   };
+  // ntfy.sh only forwards e-mail for logged-in users: NTFY_TOKEN = access token of a (free) ntfy account.
+  const auth = env.NTFY_TOKEN ? { Authorization: `Bearer ${env.NTFY_TOKEN}` } : {};
   if (env.NOTIFY_EMAIL) payload.email = env.NOTIFY_EMAIL;
-  await post(`${server}/`, payload);
+  try {
+    await post(`${server}/`, payload, auth);
+  } catch (err) {
+    if (!payload.email) throw err;
+    // e.g. 400 "anonymous email sending is not allowed": still deliver the push notification
+    console.error('ntfy rejected the e-mail copy, sending push only:', err && err.message);
+    delete payload.email;
+    await post(`${server}/`, payload, auth);
+  }
 }
 
 async function sendWebhook(env, event, thread, reply, msg, click) {
