@@ -74,9 +74,6 @@ const ld = {
         })),
       } : {}),
       ...(GOOGLE.profileUrl ? { hasMap: GOOGLE.profileUrl, sameAs: [GOOGLE.profileUrl] } : {}),
-      ...(GOOGLE.rating && GOOGLE.count ? {
-        aggregateRating: { '@type': 'AggregateRating', ratingValue: GOOGLE.rating, reviewCount: GOOGLE.count, bestRating: '5' },
-      } : {}),
     },
   ],
 };

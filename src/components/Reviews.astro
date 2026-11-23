@@ -5,6 +5,7 @@ import { GOOGLE, mapsSearch } from '../data/site.js';
 const c = copy.reviews;
 const h = copy.history;
 const profile = GOOGLE.profileUrl || mapsSearch;
+// "4.9 out of 5" read naturally by screen readers
 const hasReviews = GOOGLE.reviews.length > 0;
 ---
 <section class="rev section on-light cv" id="reviews" data-cid="reviews" aria-labelledby="rev-title">
@@ -26,19 +27,23 @@ const hasReviews = GOOGLE.reviews.length > 0;
     </header>
 
     {hasReviews ? (
-      <ul class="rev__list">
-        {GOOGLE.reviews.map((r: any, i: number) => (
-          <li class="rev__card" data-reveal style={`--d:${i % 3}`}>
-            <blockquote>
-              <p>{r.text}</p>
-            </blockquote>
-            <footer class="rev__by">
-              <span class="rev__avatar" aria-hidden="true">{r.author.trim().charAt(0)}</span>
-              <span><b>{r.author}</b><span class="rev__meta">{r.stars} ★ · {r.date}</span></span>
-            </footer>
-          </li>
-        ))}
-      </ul>
+      <>
+        <ul class="rev__list">
+          {GOOGLE.reviews.map((r: any, i: number) => (
+            <li class="rev__card" data-reveal style={`--d:${i % 3}`} data-cid={`review-${i + 1}`}>
+              <span class="rev__card-stars" role="img" aria-label={`${r.stars} ${he(c.starsLabel)}`}>
+                {Array.from({ length: 5 }, (_, k) => <span class:list={['rev__s', { 'is-off': k >= r.stars }]}><Icon name="star" /></span>)}
+              </span>
+              <blockquote class="rev__quote"><p>{r.text}</p></blockquote>
+              <footer class="rev__by">
+                <span class="rev__avatar" aria-hidden="true">{r.author.trim().charAt(0).toUpperCase()}</span>
+                <span><b>{r.author}</b><span class="rev__meta">{he(c.source)}</span></span>
+              </footer>
+            </li>
+          ))}
+        </ul>
+        <p class="rev__note">{he(c.verbatim)}</p>
+      </>
     ) : (
       <div class="rev__placeholder" data-reveal data-verify={he(copy.verifyBadge)}>
         <p class="rev__ph-title">{he(c.placeholderTitle)}</p>
@@ -70,12 +75,16 @@ const hasReviews = GOOGLE.reviews.length > 0;
   .rev__head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1.5rem; }
   .rev__score { display: grid; justify-items: end; gap: .2rem; }
   .rev__num { font-weight: 860; font-stretch: 62.5%; font-size: 5rem; line-height: .9; }
-  .rev__stars { display: flex; gap: 2px; color: #e3a008; }
+  .rev__stars { display: flex; gap: 2px; color: #d99a06; }
   .rev__stars :global(svg) { inline-size: 20px; block-size: 20px; }
   .rev__count { font-size: .875rem; color: var(--muted-on-light); }
   .rev__list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-block-start: clamp(2rem, 5vw, 3rem); }
   .rev__card { display: grid; gap: 1.25rem; align-content: space-between; padding: 1.75rem; border-radius: var(--radius); background: #fff; box-shadow: 0 1px 0 var(--line-light), 0 24px 50px -30px rgb(18 19 16 / .3); }
-  .rev__card blockquote p { font-size: 1.0625rem; }
+  .rev__card-stars { display: flex; gap: 2px; color: #d99a06; }
+  .rev__s :global(svg) { inline-size: 18px; block-size: 18px; }
+  .rev__s.is-off { color: rgb(18 19 16 / .18); }
+  .rev__quote p { font-size: 1.0625rem; white-space: pre-line; }
+  .rev__note { margin-block-start: 1rem; font-size: .875rem; color: var(--muted-on-light); }
   .rev__by { display: flex; gap: .75rem; align-items: center; }
   .rev__by b { display: block; font-weight: 700; }
   .rev__avatar { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; background: var(--lime); font-weight: 800; }

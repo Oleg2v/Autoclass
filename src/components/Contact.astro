@@ -1,7 +1,7 @@
 ---
 import Icon from './Icon.astro';
 import { copy, he } from '../data/copy.js';
-import { BUSINESS, HOURS, telLink, waLink, mailLink, mapsEmbed, mapsSearch, wazeLink } from '../data/site.js';
+import { BUSINESS, HOURS, GOOGLE, telLink, waLink, mailLink, mapsEmbed, mapsSearch, wazeLink } from '../data/site.js';
 const c = copy.contact;
 ---
 <section class="con section cv" id="contact" data-cid="contact" aria-labelledby="con-title">
@@ -27,7 +27,7 @@ const c = copy.contact;
               <address>{he(c.addressLine)}</address>
               <span class="con__nav">
                 <a class="link" href={wazeLink} target="_blank" rel="noopener">{he(c.waze)}<span class="sr-only">{he(copy.a11y.newTab)}</span></a>
-                <a class="link" href={mapsSearch} target="_blank" rel="noopener">{he(c.gmaps)}<span class="sr-only">{he(copy.a11y.newTab)}</span></a>
+                <a class="link" href={GOOGLE.profileUrl || mapsSearch} target="_blank" rel="noopener">{he(c.gmaps)}<span class="sr-only">{he(copy.a11y.newTab)}</span></a>
               </span>
             </dd>
           </div>
@@ -35,9 +35,17 @@ const c = copy.contact;
             <dt><Icon name="clock" />{he(c.hours)}</dt>
             <dd>
               {HOURS ? (
-                <ul class="con__hours">
-                  {HOURS.map((h: any) => <li><span>{h.label}</span><span class="ltr">{h.text}</span></li>)}
-                </ul>
+                <>
+                  <ul class="con__hours">
+                    {HOURS.map((h: any) => (
+                      <li>
+                        <span>{h.key === 'week' ? he(c.hoursWeek) : he(c.hoursWeekend)}</span>
+                        {h.text ? <span class="ltr">{h.text}</span> : <span class="con__closed">{he(c.closed)}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                  <span class="con__src">{he(c.hoursSource)}</span>
+                </>
               ) : (
                 <span class="con__pending">{he(c.hoursPending)}</span>
               )}
@@ -92,7 +100,10 @@ const c = copy.contact;
   .con__nav { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin-block-start: .5rem; font-size: .9375rem; }
   .con__nav a { display: inline-block; padding-block: .35rem; }
   .con__pending { color: var(--muted-on-dark); }
-  .con__hours li { display: flex; justify-content: space-between; gap: 1rem; }
+  .con__hours { display: grid; gap: .25rem; max-inline-size: 320px; }
+  .con__hours li { display: flex; justify-content: space-between; gap: 1rem; font-weight: 600; }
+  .con__closed { color: var(--muted-on-dark); font-weight: 500; }
+  .con__src { display: block; margin-block-start: .4rem; font-size: .8125rem; color: var(--muted-on-dark); }
 
   .con__map {
     position: relative;

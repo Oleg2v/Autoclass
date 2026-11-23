@@ -2,7 +2,7 @@
 import Car from './car/Car.astro';
 import Icon from './Icon.astro';
 import { copy, he } from '../data/copy.js';
-import { BUSINESS, telLink, waLink } from '../data/site.js';
+import { BUSINESS, GOOGLE, telLink, waLink } from '../data/site.js';
 
 // Build-time split of the H1 into letters with deterministic "dent" offsets.
 // The visible split copy is aria-hidden; the real heading text is in .sr-only.
@@ -67,6 +67,9 @@ const LAST_DENT = 5; // the "ח" in "פחחות" pops last, with a lime flash
           </a>
         </div>
         <ul class="hero__chips">
+          {GOOGLE.rating && (
+            <li class="hero__rating"><a href="#reviews"><Icon name="star" /><b class="ltr">{GOOGLE.rating}</b> {he(copy.hero.google)} · {GOOGLE.count} {he(copy.reviews.reviewsWord)}</a></li>
+          )}
           {copy.hero.chips.map((c) => (
             <li><Icon name="check" />{c.he}</li>
           ))}
@@ -156,6 +159,8 @@ const LAST_DENT = 5; // the "ח" in "פחחות" pops last, with a lime flash
     color: var(--text-on-dark);
   }
   .hero__chips :global(svg) { inline-size: 1rem; block-size: 1rem; color: var(--lime); }
+  .hero__rating a { display: inline-flex; align-items: center; gap: .35rem; text-decoration: none; }
+  .hero__rating b { font-weight: 800; }
 
   .hero__stage {
     position: relative;
