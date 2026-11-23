@@ -30,6 +30,13 @@ export async function onRequest({ request, env }) {
 
   try {
     const res = await env.COMMENTS.fetch(new Request(target, init));
+    // The Worker always answers JSON (or CSV); anything else is the platform
+    // reporting that the service itself is unreachable.
+    const type = res.headers.get('Content-Type') || '';
+    if (res.status >= 500 && !/json|csv/i.test(type)) {
+      console.error('comments service error', res.status, (await res.text()).slice(0, 200));
+      return unavailable('comments service did not answer');
+    }
     const out = new Response(res.body, res);
     out.headers.set('Cache-Control', 'no-store');
     return out;

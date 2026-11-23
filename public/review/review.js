@@ -258,6 +258,7 @@ let rafId = 0;
 let tickId = 0;
 let pollId = 0;
 let toastId = 0;
+let hintId = 0;
 let ro = null;
 let pointer = null;
 let inflight = null;
@@ -514,6 +515,7 @@ function renderPins() {
   if (!layer) return;
   const want = S.mode ? visibleThreads() : [];
   const seen = new Set();
+  let created = false;
   const t = T();
   for (const th of want) {
     let b = pins.get(th.id);
@@ -523,6 +525,7 @@ function renderPins() {
         type: 'button',
         class: 'acr-pin',
         'data-acr-id': id,
+        style: PIN_PARKED, // until layout() has placed it
         onclick: (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -536,6 +539,7 @@ function renderPins() {
       });
       pins.set(id, b);
       layer.append(b);
+      created = true;
     }
     b.textContent = th.pending ? '…' : String(th.num);
     b.classList.toggle('acr-resolved', !!th.resolved);
@@ -552,10 +556,24 @@ function renderPins() {
     }
   }
   const drafting = S.mode && S.active && S.active.type === 'draft';
-  if (drafting && !draftPin.isConnected) layer.append(draftPin);
-  if (!drafting && draftPin.isConnected) draftPin.remove();
-  schedule();
+  if (drafting && !draftPin.isConnected) {
+    layer.append(draftPin);
+    created = true;
+  }
+  if (!drafting && draftPin.isConnected) {
+    draftPin.remove();
+    draftPin.setAttribute('style', PIN_PARKED);
+  }
+  if (created && S.mode) {
+    // place new pins now rather than next frame, so they never show up late
+    if (rafId) cancelAnimationFrame(rafId);
+    layout();
+  } else schedule();
 }
+
+// Hidden, and parked inside the document (incl. the 6px hit-area pseudo-element)
+// until layout() places it.
+const PIN_PARKED = 'visibility:hidden;transform:translate(16px,48px)';
 
 function schedule() {
   if (!rafId && S.mode) rafId = requestAnimationFrame(layout);
@@ -567,18 +585,26 @@ function layout() {
   const lr = layer.getBoundingClientRect();
   const hr = HTML.getBoundingClientRect();
   const docH = Math.max(hr.height, HTML.scrollHeight);
-  const PIN = 34;
-  const minX = hr.left + (PAGE_DIR === 'rtl' ? PIN : 2);
-  const maxX = hr.right - (PAGE_DIR === 'rtl' ? 2 : PIN);
-  const minY = hr.top + PIN;
-  const maxY = hr.top + docH - 2;
+  // The pin box sits on the inline-start side of its tip (left of it on an RTL page).
+  // Offsets live in the transform, never in margins, and the clamp keeps the whole
+  // 44px hit area inside the document: a box poking past the edge, even for one
+  // frame, makes mobile Chrome widen the layout viewport.
+  const PIN = 32;
+  const EDGE = 8;
+  const rtl = PAGE_DIR === 'rtl';
+  const minX = hr.left + EDGE + (rtl ? PIN : 0);
+  const maxX = hr.right - EDGE - (rtl ? 0 : PIN);
+  const minY = hr.top + PIN + EDGE;
+  const maxY = hr.top + docH - EDGE;
+  const ox = rtl ? -PIN : 0;
   const t = T();
 
   const place = (el, anchor) => {
     const p = resolvePoint(anchor);
     const x = clamp(p.x, minX, maxX);
     const y = clamp(p.y, minY, maxY);
-    el.style.transform = `translate(${Math.round(x - lr.left)}px, ${Math.round(y - lr.top)}px)`;
+    el.style.transform = `translate(${Math.round(x - lr.left + ox)}px, ${Math.round(y - lr.top - PIN)}px)`;
+    if (el.style.visibility) el.style.visibility = '';
     if (el._detached !== p.detached) {
       el._detached = p.detached;
       el.classList.toggle('acr-detached', p.detached);
@@ -637,7 +663,8 @@ function placePopover() {
 
 function updateHover() {
   const off = () => hover.classList.remove('acr-on');
-  if (!S.mode || !MQ_FINE.matches || !pointer || S.modal || (S.active && S.active.type === 'draft')) return off();
+  // While a popover is open a page click only closes it, so no anchor preview then.
+  if (!S.mode || !MQ_FINE.matches || !pointer || S.modal || S.active || S.drawer) return off();
   const el = document.elementFromPoint(pointer.x, pointer.y);
   if (!el || isWidget(el) || el === HTML || el === document.body) return off();
   const a = anchorTargetFor(el);
@@ -730,6 +757,8 @@ function setMode(on) {
   modeBtn.setAttribute('aria-pressed', String(on));
   modeBtn.title = `${on ? T().modeOn : T().modeOff} (C)`;
   hint.classList.toggle('acr-on', on);
+  clearTimeout(hintId);
+  if (on) hintId = setTimeout(() => hint.classList.remove('acr-on'), 6000);
   if (on) {
     addEventListener('click', onPageClick, true);
     for (const type of GUARDED) addEventListener(type, guard, true);
@@ -773,7 +802,7 @@ function closePopover(restore = true) {
   S.active = null;
   pop.hidden = true;
   pop.replaceChildren();
-  pop.classList.remove('acr-sheet', 'acr-pulse');
+  pop.className = 'acr-pop';
   popRefs = null;
   renderPins();
   const f = S.returnFocus;
@@ -1524,7 +1553,7 @@ function buildUI() {
   toastEl = h('div', { class: 'acr-toast', role: 'status', 'aria-live': 'polite' });
   root.append(hover, hint, pop, drawer, bar, toastEl);
   layer = h('div', { class: `acr-layer acr-off acr-pdir-${PAGE_DIR}`, 'aria-label': 'Review pins', translate: 'no' });
-  draftPin = h('span', { class: 'acr-pin acr-draft', 'aria-hidden': 'true' }, '+');
+  draftPin = h('span', { class: 'acr-pin acr-draft', 'aria-hidden': 'true', style: PIN_PARKED }, '+');
   document.body.append(layer, root);
 }
 
