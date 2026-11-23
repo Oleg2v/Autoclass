@@ -23,6 +23,7 @@ import {
   parsePage,
   parseReply,
   parseResolve,
+  rateKey,
 } from './validate.js';
 
 export { CommentsRoom };
@@ -64,11 +65,34 @@ async function keyMatches(given, expected) {
   return crypto.subtle.timingSafeEqual(a, b);
 }
 
+// Reads at most LIMITS.body bytes, also when the body is chunked (no Content-Length).
 async function readJson(request) {
+  const tooLarge = () => new HttpError(413, 'too_large', 'request body too large');
   const declared = Number(request.headers.get('Content-Length') || 0);
-  if (declared > LIMITS.body) throw new HttpError(413, 'too_large', 'request body too large');
-  const raw = await request.text();
-  if (raw.length > LIMITS.body) throw new HttpError(413, 'too_large', 'request body too large');
+  if (declared > LIMITS.body) throw tooLarge();
+  let raw = '';
+  if (request.body) {
+    const reader = request.body.getReader();
+    const chunks = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > LIMITS.body) {
+        reader.cancel().catch(() => {});
+        throw tooLarge();
+      }
+      chunks.push(value);
+    }
+    const buf = new Uint8Array(size);
+    let at = 0;
+    for (const c of chunks) {
+      buf.set(c, at);
+      at += c.byteLength;
+    }
+    raw = new TextDecoder().decode(buf);
+  }
   let body;
   try {
     body = JSON.parse(raw || 'null');
@@ -121,12 +145,10 @@ function toCsv(threads) {
 
 async function handle(request, env, ctx) {
   const url = new URL(request.url);
-  let path = url.pathname.replace(/\/+$/, '');
+  const path = url.pathname.replace(/\/+$/, '');
   if (path !== PREFIX && !path.startsWith(`${PREFIX}/`)) {
     return json({ error: 'not_found', message: 'not found' }, 404);
   }
-  path = path.slice(PREFIX.length);
-  const parts = path.split('/').filter(Boolean).map(decodeURIComponent);
   const method = request.method.toUpperCase();
 
   if (method === 'OPTIONS') {
@@ -139,8 +161,21 @@ async function handle(request, env, ctx) {
     return json({ error: 'unauthorized', message: 'missing or wrong X-Review-Key' }, 401);
   }
 
+  // Decoded only after auth; a malformed escape (%E0, %ZZ) is an unknown path, not a 500.
+  const parts = path
+    .slice(PREFIX.length)
+    .split('/')
+    .filter(Boolean)
+    .map((seg) => {
+      try {
+        return decodeURIComponent(seg);
+      } catch {
+        throw new HttpError(404, 'not_found', 'not found');
+      }
+    });
+
   const room = env.ROOMS.get(env.ROOMS.idFromName(ROOM_NAME));
-  const meta = { ip: request.headers.get('CF-Connecting-IP') || 'unknown' };
+  const meta = { ip: rateKey(request.headers.get('CF-Connecting-IP')) };
   const notAllowed = (allow) => json({ error: 'method_not_allowed', message: `use ${allow}` }, 405, { Allow: allow });
 
   // /api/comments

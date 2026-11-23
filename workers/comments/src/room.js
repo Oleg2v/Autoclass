@@ -9,7 +9,8 @@
 import { DurableObject } from 'cloudflare:workers';
 
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX_WRITES = 30;
+const RATE_MAX_WRITES = 30; // per client (IPv4 address or IPv6 /64, see rateKey)
+const RATE_MAX_TOTAL = 200; // across all clients, so notifications cannot be flooded
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS threads (
@@ -83,7 +84,8 @@ export class CommentsRoom extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
-    this.hits = new Map(); // ip -> timestamps of recent writes (in memory is enough for 30/min)
+    this.hits = new Map(); // client key -> timestamps of recent writes (in memory is enough for 30/min)
+    this.allHits = []; // timestamps of recent writes from everyone
     for (const stmt of SCHEMA) this.sql.exec(stmt);
   }
 
@@ -92,13 +94,21 @@ export class CommentsRoom extends DurableObject {
   #limited(ip) {
     const now = Date.now();
     const key = ip || 'unknown';
+    const tooMany = (oldest, max) => ({
+      status: 429,
+      error: 'rate_limited',
+      message: `max ${max} writes per minute`,
+      retryAfter: Math.max(1, Math.ceil((oldest + RATE_WINDOW_MS - now) / 1000)),
+    });
     const recent = (this.hits.get(key) || []).filter((t) => now - t < RATE_WINDOW_MS);
     if (recent.length >= RATE_MAX_WRITES) {
       this.hits.set(key, recent);
-      const retryAfter = Math.max(1, Math.ceil((recent[0] + RATE_WINDOW_MS - now) / 1000));
-      return { status: 429, error: 'rate_limited', message: `max ${RATE_MAX_WRITES} writes per minute`, retryAfter };
+      return tooMany(recent[0], RATE_MAX_WRITES);
     }
+    while (this.allHits.length && now - this.allHits[0] >= RATE_WINDOW_MS) this.allHits.shift();
+    if (this.allHits.length >= RATE_MAX_TOTAL) return tooMany(this.allHits[0], RATE_MAX_TOTAL);
     recent.push(now);
+    this.allHits.push(now);
     this.hits.set(key, recent);
     if (this.hits.size > 2000) {
       for (const [k, list] of this.hits) if (!list.length || now - list[list.length - 1] >= RATE_WINDOW_MS) this.hits.delete(k);

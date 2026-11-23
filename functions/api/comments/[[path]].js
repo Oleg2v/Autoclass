@@ -8,12 +8,26 @@ const JSON_HEADERS = {
   'Cache-Control': 'no-store',
 };
 
-const unavailable = (message) =>
-  new Response(JSON.stringify({ error: 'comments_unavailable', message }), { status: 503, headers: JSON_HEADERS });
+// Same cap as the Worker (LIMITS.body in workers/comments/src/validate.js).
+const MAX_BODY = 16 * 1024;
+
+const reply = (status, error, message) =>
+  new Response(JSON.stringify({ error, message }), { status, headers: JSON_HEADERS });
+const unavailable = (message) => reply(503, 'comments_unavailable', message);
 
 export async function onRequest({ request, env }) {
   if (!env.COMMENTS || typeof env.COMMENTS.fetch !== 'function') {
     return unavailable('COMMENTS service binding is not configured');
+  }
+
+  const method = request.method.toUpperCase();
+  // Cheap refusals before any body is touched: the Worker checks the key itself, but a
+  // request without one (or with an oversized body) is not worth an upload.
+  if (method !== 'OPTIONS' && !request.headers.get('X-Review-Key')) {
+    return reply(401, 'unauthorized', 'missing or wrong X-Review-Key');
+  }
+  if (Number(request.headers.get('Content-Length') || 0) > MAX_BODY) {
+    return reply(413, 'too_large', 'request body too large');
   }
 
   const url = new URL(request.url);
@@ -25,8 +39,12 @@ export async function onRequest({ request, env }) {
   if (ip) headers.set('CF-Connecting-IP', ip);
   headers.delete('Cookie'); // the API never needs site cookies
 
-  const init = { method: request.method, headers, redirect: 'manual' };
-  if (request.method !== 'GET' && request.method !== 'HEAD') init.body = await request.arrayBuffer();
+  const init = { method, headers, redirect: 'manual' };
+  // Streamed, not buffered: the Worker reads at most MAX_BODY bytes of it.
+  if (method !== 'GET' && method !== 'HEAD' && request.body) {
+    init.body = request.body;
+    init.duplex = 'half'; // required by the fetch spec for stream bodies
+  }
 
   try {
     const res = await env.COMMENTS.fetch(new Request(target, init));
